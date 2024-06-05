@@ -38,8 +38,8 @@ This configuration file can be found at: "&lt;Your Installation Path&gt;/Mirth%2
 <br/>
 The configuration consists of 4 sections:
 <ul>
-  <li><b>sessionLifeSpanInMinutes</b><br/>Allows to determine the maximum inactivity lifespan for a user session in minutes. If the value is 0, the user session does not expire.</li>
-<li><b>environment</b><br/>Defines the environments to which the Mirth system can be attributed. The default configuration contains the following environments:<ul><li>Production</li><li>Test</li><li>Development</li></ul>This can of course be changed and also an arbitrary number of environment can be added</li>
+  <li><b>sessionLifeSpanInMinutes</b><br/>Allows to determine the maximum inactivity period for a user session in minutes. If the value is 0, the user session will not expire.</li>
+<li><b>environment</b><br/>Defines the environments to which the Mirth system can be assigned. The default configuration includes the following environments:<ul><li>Production</li><li>Test</li><li>Development</li></ul>This can be changed, of course, and an arbitrary number of environments can be added.</li>
 <li><b>system</b><br/></li>
 <li><b>excludeFromFunctionDetection</b><br/></li>
 </ul>
