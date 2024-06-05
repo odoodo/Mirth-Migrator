@@ -19,6 +19,17 @@ If a component already exists at the destination instance, conflict handling wil
   <kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd>
 
 <h2>Installation</h2>
-
+<ol>
+<li>Copy the folder "web" to your Mirth installation (to "&lt;Your Install Path&gt;\Mirth Connect")</li>
+<li>Open the menu item "Settings", there the tab "Resources" and press "Add Resources"</li>
+<li>Enter "./web/MirthMigrator/jar" in the field Directory and name the new Resource "MirthMigrator"</li>
+<li>Save the change and press "Reload Resource". Depending on your Mirth version it should now show something like "&lt;Your Installation Path&gt;/Mirth%20Connect/web/MirthMigrator/jar/MirthMigrator.jar" or just "MirthMigrator.jar" under "Loaded Libraries"</li>
+<li>Now go to menu item "Channels" and press "Import Channel"</li>
+<li>Import MIRTH_MIGRATOR.xml</li>
+<li>Within the MIRTH_MIGRATOR-channel click on tab "Summary" (1st tab) and press "Set Dependencies"</li>
+<li>Choose the tab "Library Resources" (2nd tab) in the up-popping dialog and activate the checkbox for "Mirth Migrator"</li>
+<li>Press ok, save the channel changes and deploy the channel</li>
+</ol>
+  
 <h2>Configuration</h2>
 
