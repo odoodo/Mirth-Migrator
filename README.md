@@ -30,6 +30,17 @@ If a component already exists at the destination instance, conflict handling wil
 <li>Choose the tab "Library Resources" (2nd tab) in the up-popping dialog and activate the checkbox for "Mirth Migrator"</li>
 <li>Press ok, save the channel changes and deploy the channel</li>
 </ol>
-  
 <h2>Configuration</h2>
+Mirth Migrator does not yet feature a graphical configuration frontend. (might be added at a later point of time)
+Thus, the configuration has to be changed in the configuration file directly.<br/>
+<br/>
+This configuration file can be found at: "&lt;Your Installation Path&gt;/Mirth%20Connect/web/MirthMigrator/config/<b>MirthMigrator.conf</b>"<br/>
+<br/>
+The configuration consists of 4 sections:
+<ul>
+  <li><b>sessionLifeSpanInMinutes</b><br/>Allows to determine the maximum inactivity lifespan for a user session in minutes. If the value is 0, the user session does not expire.</li>
+<li><b>environment</b><br/>Defines the environments to which the Mirth system can be attributed. The default configuration contains the following environments:<ul><li>Production</li><li>Test</li><li>Development</li></ul>This can of course be changed and also an arbitrary number of environment can be added</li>
+<li><b>system</b><br/></li>
+<li><b>excludeFromFunctionDetection</b><br/></li>
+</ul>
 
