@@ -41,6 +41,15 @@ Thus, the configuration has to be changed in the configuration file directly.<br
 This configuration file can be found at: "&lt;Your Installation Path&gt;/Mirth%20Connect/web/MirthMigrator/config/<b>MirthMigrator.conf</b>"<br/>
 <br/>
 The configuration consists of 4 sections:
+<table>
+  <tr><td colspan=2><b>sessionLifeSpanInMinutes</b></td><td>Allows to determine the maximum inactivity period for a user session in minutes. If the value is 0, the user session will not expire.</td></tr>
+  <tr><td rowspan=2><b>environment</b></td><td>YYY</td><td>ZZZ</td></tr>
+  <tr><td>YYY</td><td>ZZZ</td></tr>
+  <tr><td rowspan=2><b>system</b></td><td>YYY</td><td>ZZZ</td></tr>
+  <tr><td>YYY</td><td>ZZZ</td></tr>
+  <tr><td colspan=2><b>excludeFromFunctionDetection</b></td><td>XXX</td></tr>
+</table>
+
 <ul>
   <li><b>sessionLifeSpanInMinutes</b><br/>Allows to determine the maximum inactivity period for a user session in minutes. If the value is 0, the user session will not expire.</li>
 <li><b>environment</b><br/>Defines the environments to which the Mirth system can be assigned. The default configuration includes the following environments:<ul><li>Production</li><li>Test</li><li>Development</li></ul>This can be changed, of course, and an arbitrary number of environments can be added.</li>
