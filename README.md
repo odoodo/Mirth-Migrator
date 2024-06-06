@@ -19,17 +19,21 @@ If a component already exists at the destination instance, conflict handling wil
   <kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd>
 
 <h2>Installation</h2>
-<ol>
-<li>Copy the folder "web" to your Mirth installation (to "&lt;Your Install Path&gt;\Mirth Connect")</li>
-<li>Open the menu item "Settings", there the tab "Resources" and press "Add Resources"</li>
-<li>Enter "./web/MirthMigrator/jar" in the field Directory and name the new Resource "MirthMigrator"</li>
-<li>Save the change and press "Reload Resource". Depending on your Mirth version it should now show something like "&lt;Your Installation Path&gt;/Mirth%20Connect/web/MirthMigrator/jar/MirthMigrator.jar" or just "MirthMigrator.jar" under "Loaded Libraries"</li>
-<li>Now go to menu item "Channels" and press "Import Channel"</li>
-<li>Import MIRTH_MIGRATOR.xml</li>
-<li>Within the MIRTH_MIGRATOR-channel click on tab "Summary" (1st tab) and press "Set Dependencies"</li>
-<li>Choose the tab "Library Resources" (2nd tab) in the up-popping dialog and activate the checkbox for "Mirth Migrator"</li>
-<li>Press ok, save the channel changes and deploy the channel</li>
-</ol>
+
+<table>
+  <tr><td><b>1.</b></td><td>Copy the <b>folder "web"</b> to your Mirth installation (to <b>"&lt;Your Install Path&gt;\Mirth Connect"</b>)</td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
+  <tr><td><b>2.</b></td><td>Open the <b>menu item "Settings"</b>, there the <b>tab "Resources"</b> and press <b>"Add Resources"</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
+  <tr><td><b>3.</b></td><td>In the field <b>Directory</b> enter <b>"./web/MirthMigrator/jar"</b> and <b>name</b> the new Resource <b>"MirthMigrator"</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
+  <tr><td><b>4.</b></td><td><b>Save</b> the change and <b>press "Reload Resource"</b>.<br/>
+    Depending on your Mirth version it should now show something like "&lt;Your Installation Path&gt;/Mirth%20Connect/web/MirthMigrator/jar/MirthMigrator.jar" or just "MirthMigrator.jar" under "Loaded Libraries"</td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
+  <tr><td><b>5.</b></td><td>Now go to menu item "<b>Channels</b>" and press "<b>Import Channel</b>"</td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
+  <tr><td><b>6.</b></td><td>Import <b>MIRTH_MIGRATOR.xml</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
+  <tr><td><b>7.</b></td><td>Within the MIRTH_MIGRATOR-channel click on <b>tab "Summary"</b> (1st tab) and press <b>"Set Dependencies"</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
+  <tr><td><b>8.</b></td><td>Choose the <b>tab "Library Resources"</b> (2nd tab) in the up-popping dialog and activate the <b>checkbox</b> for <b>"Mirth Migrator"</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
+  <tr><td><b>9.</b></td><td><b>Press ok</b>, <b>save</b> the channel changes and <b>deploy</b> the channel</td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
+  <tr><td><b>10.</b></td><td>Mirth Migrator should now be available under <b>http://&lt;YOUR MIRTH SERVER&gt;:1339/MirthMigrator</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
+</table>
+
 <h2>Configuration</h2>
 Mirth Migrator does not yet feature a graphical configuration frontend. (might be added at a later point of time)
 Thus, the configuration has to be changed in the configuration file directly.<br/>
