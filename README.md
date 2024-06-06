@@ -31,18 +31,18 @@ If a component already exists at the destination instance, conflict handling wil
   <tr><td><b>7.</b></td><td>Within the MIRTH_MIGRATOR-channel click on <b>tab "Summary"</b> (1st tab) and press <b>"Set Dependencies"</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
   <tr><td><b>8.</b></td><td>Choose the <b>tab "Library Resources"</b> (2nd tab) in the up-popping dialog and activate the <b>checkbox</b> for <b>"Mirth Migrator"</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
   <tr><td><b>9.</b></td><td><b>Press ok</b>, <b>save</b> the channel changes and <b>deploy</b> the channel</td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
-  <tr><td><b>10.</b></td><td>Mirth Migrator should now be available under <b>http://&lt;YOUR MIRTH SERVER&gt;:1339/MirthMigrator</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
+  <tr><td><b>10.</b></td><td>Mirth Migrator should now be available under <b>http://&lt;YOUR&nbsp;MIRTH&nbsp;SERVER&gt;:1339/MirthMigrator</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
 </table>
 
 <h2>Configuration</h2>
-Mirth Migrator does not yet feature a graphical configuration frontend. (might be added at a later point of time)
+Mirth Migrator does not (yet) feature a graphical configuration frontend.
 Thus, the configuration has to be changed in the configuration file directly.<br/>
 <br/>
-This configuration file can be found at: "&lt;Your Installation Path&gt;/Mirth%20Connect/web/MirthMigrator/config/<b>MirthMigrator.conf</b>"<br/>
+This configuration file can be found at: "&lt;Your&nbsp;Installation&nbsp;Path&gt;/Mirth&nbsp;Connect/web/MirthMigrator/config/<b>MirthMigrator.conf</b>"<br/>
 <br/>
 The configuration consists of 4 sections:
 <table>
-  <tr><td colspan=2><b>sessionLifeSpanInMinutes</b></td><td>Allows to determine the maximum inactivity period for a user session in minutes. If the value is 0, the user session will not expire.</td></tr>
+  <tr><td colspan=2><b>sessionLifeSpanInMinutes</b></td><td>Allows to determine the maximum inactivity period for a user session in minutes.<br/><i>If the value is 0, the user session will not expire</i></td></tr>
   <tr><td rowspan=2><b>environment</b></td><td>YYY</td><td>ZZZ</td></tr>
   <tr><td>YYY</td><td>ZZZ</td></tr>
   <tr><td rowspan=2><b>system</b></td><td>YYY</td><td>ZZZ</td></tr>
@@ -51,7 +51,7 @@ The configuration consists of 4 sections:
 </table>
 
 <ul>
-  <li><b>sessionLifeSpanInMinutes</b><br/>Allows to determine the maximum inactivity period for a user session in minutes. If the value is 0, the user session will not expire.</li>
+  <li><b>sessionLifeSpanInMinutes</b><br/>Allows to determine the maximum inactivity period for a user session in minutes.<br/><i>If the value is 0, the user session will not expire</i></li>
 <li><b>environment</b><br/>Defines the environments to which the Mirth system can be assigned. The default configuration includes the following environments:<ul><li>Production</li><li>Test</li><li>Development</li></ul>This can be changed, of course, and an arbitrary number of environments can be added.</li>
 <li><b>system</b><br/></li>
 <li><b>excludeFromFunctionDetection</b><br/></li>
