@@ -57,3 +57,5 @@ The configuration consists of 4 sections:
 <li><b>excludeFromFunctionDetection</b><br/></li>
 </ul>
 
+<h2>Kudos</h2>
+Mirth Migrator makes use of a number of other open source projects whose authors I am grateful to:
