@@ -41,7 +41,7 @@ If a component already exists at the destination instance, conflict handling wil
 Mirth Migrator does not (yet) feature a graphical configuration frontend.
 Thus, the configuration has to be changed in the configuration file directly.<br/>
 <br/>
-This configuration file can be found at: "&lt;Your&nbsp;Installation&nbsp;Path&gt;/Mirth&nbsp;Connect/web/MirthMigrator/config/<b>MirthMigrator.conf</b>"<br/>
+This <b>configuration file</b> can be found at: "&lt;Your&nbsp;Installation&nbsp;Path&gt;/Mirth&nbsp;Connect/web/MirthMigrator/config/<b>MirthMigrator.conf</b>"<br/>
 <br/>
 The configuration consists of 4 sections:
 <table>
@@ -66,3 +66,12 @@ When you access Mirth Migrator, it asks you to log in. Simply use your Mirth acc
 
 <h2>Kudos</h2>
 Mirth Migrator makes use of a number of other open source projects:
+<ul>
+<li><a href="https://github.com/stleary/JSON-java" target="_blank">JSON in Java</a> (A JSON implementation for Java)</li>
+<li><a href="https://github.com/qiao/difflib.js/" target="_blank">Difflib.js</a> (for providing diffs)</li>
+<li></li><a href="https://highlightjs.org/" target="_blank">highlight.js</a> (for code highlighting)</li>
+</ul>
+<br/>
+<i>Please let me know if I forgot to mention your project.</i>
+
+
