@@ -1,6 +1,7 @@
 
 
 
+
 <p align="center"><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/13eb2ff1-8386-41c3-8c1b-aba7127b112a" width="200"></p>
 Mirth Migrator automates the migration of <a href="https://www.nextgen.com/solutions/interoperability/mirth-integration-engine/mirth-connect-downloads" target="_blank">Mirth Enterprise Service Bus</a> channels and code templates from one instance to another.
 <h2>Features</h2>
@@ -23,18 +24,18 @@ If a component already exists at the destination instance, conflict handling wil
 <h2>Installation</h2>
 
 <table>
-  <tr><td><b>1.</b></td><td>Copy the <b>folder "web"</b> to your Mirth installation (to <b>"&lt;Your Install Path&gt;\Mirth Connect"</b>)</td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
-  <tr><td><b>2.</b></td><td>Open the <b>menu item "Settings"</b>, there the <b>tab "Resources"</b> and press <b>"Add Resources"</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
-  <tr><td><b>3.</b></td><td>In the field <b>Directory</b> enter <b>"./web/MirthMigrator/jar"</b> and <b>name</b> the new Resource <b>"MirthMigrator"</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
+  <tr><td><b>1.</b></td><td>Copy the <b>folder "web"</b> to your Mirth installation (to <b>"&lt;Your Install Path&gt;\Mirth Connect"</b>)</td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/bb711974-3afe-4f3e-876b-3a1c5c83f274" width="160"></kbd></td></tr>
+  <tr><td><b>2.</b></td><td>In Mirth Administrator open the <b>menu item "Settings"</b>, there the <b>tab "Resources"</b> and press <b>"Add Resources"</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/eb1a83c9-0cd3-4b08-b9be-1bc331677fb2" width="160"></kbd></td></tr>
+  <tr><td><b>3.</b></td><td>In the field <b>Directory</b> enter <b>"./web/MirthMigrator/jar"</b> and <b>name</b> the new Resource <b>"MirthMigrator"</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/e76d7350-07e5-4983-b79d-c3c15e4ed962" width="160"></kbd></td></tr>
   <tr><td><b>4.</b></td><td><b>Save</b> the change and <b>press "Reload Resource"</b>.<br/>
-    Depending on your Mirth version it should now show something like "&lt;Your Installation Path&gt;/Mirth%20Connect/web/MirthMigrator/jar/MirthMigrator.jar" or just "MirthMigrator.jar" under "Loaded Libraries"</td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
-  <tr><td><b>5.</b></td><td>Now go to menu item "<b>Channels</b>" and press "<b>Import Channel</b>"</td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
-  <tr><td><b>6.</b></td><td>Import <b>MIRTH_MIGRATOR.xml</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
-  <tr><td><b>7.</b></td><td>Within the MIRTH_MIGRATOR-channel click on <b>tab "Summary"</b> (1st tab) and press <b>"Set Dependencies"</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
-  <tr><td><b>8.</b></td><td>Choose the <b>tab "Library Resources"</b> (2nd tab) in the up-popping dialog and activate the <b>checkbox</b> for <b>"Mirth Migrator"</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
-  <tr><td><b>9.</b></td><td><b>Press ok</b>, <b>save</b> the channel changes and <b>deploy</b> the channel</td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
+    Depending on your Mirth version it should now show something like "&lt;Your Installation Path&gt;/Mirth%20Connect/web/MirthMigrator/jar/MirthMigrator.jar" or just "MirthMigrator.jar" under "Loaded Libraries"</td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/5c1229a7-67d3-47db-8815-0830d49a8a6d" width="160"></kbd></td></tr>
+  <tr><td><b>5.</b></td><td>Now go to menu item "<b>Channels</b>" and press "<b>Import Channel</b>"</td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/7a8a787d-fc2f-49ec-a986-1ef7e417363d" width="160"></kbd></td></tr>
+  <tr><td><b>6.</b></td><td>Import <b>MIRTH_MIGRATOR.xml</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/486a7c18-c5dc-403c-8c36-26f03ee61d1e" width="160"></kbd></td></tr>
+  <tr><td><b>7.</b></td><td>Within the MIRTH_MIGRATOR-channel click on <b>tab "Summary"</b> (1st tab) and press <b>"Set Dependencies"</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/097d49df-9fb3-4ff3-ae88-a28b201d5185" width="160"></kbd></td></tr>
+  <tr><td><b>8.</b></td><td>Choose the <b>tab "Library Resources"</b> (2nd tab) in the up-popping dialog, activate the <b>checkbox</b> for <b>"Mirth Migrator"</b> and <b>press OK</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/5dc67b83-c667-475d-8a88-38e255928bfb" width="160"></kbd></td></tr>
+  <tr><td><b>9.</b></td><td><b><b>Save</b> the channel changes and <b>deploy</b> the channel</td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/809cc23e-012a-4ba0-a2f4-6fc3eda93155" width="160"></kbd></td></tr>
   <tr><td><b>10.</b></td><td>Mirth Migrator should now be available under <b>http://&lt;YOUR&nbsp;MIRTH&nbsp;SERVER&gt;:1339/MirthMigrator</b><br/><br/>
-  <i>$${\color{red}Please \space be \space aware \space that \space the \space Mirth \space Migrator \space needs \space to \space be \space configured \space before \space you \space can \space use \space it.}$$ $${\color{red}Check \space the \space configuration \space section \space below \space for \space details}$$</i></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
+  <i>$${\color{red}Please \space be \space aware \space that \space the \space Mirth \space Migrator \space needs \space to \space be \space configured \space before \space you \space can \space use \space it.}$$ $${\color{red}Check \space the \space configuration \space section \space below \space for \space details}$$</i></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/c52cb3f6-b78f-4cca-887f-00407c005f67" width="160"></kbd></td></tr>
 </table>
 
 <h2>Configuration</h2>
@@ -62,7 +63,7 @@ The configuration consists of 4 sections:
 
 Any <b>changes</b> of the configuration <b>are applied on the fly</b>. There is no need to restart the MIRTH_Migrator channel.
 
-When you access Mirth Migrator, it asks you to log in. Simply use your Mirth account of the Mirth instance at which the MIRTH_MIGRATOR channel is running.
+When you access Mirth Migrator, it asks you to <b>log in</b>. Simply <b>use your Mirth account</b> of the Mirth instance at which the MIRTH_MIGRATOR channel is running.
 
 <h2>Kudos</h2>
 Mirth Migrator makes use of a number of other open source projects:
