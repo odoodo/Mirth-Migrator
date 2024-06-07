@@ -1,6 +1,8 @@
 
-<p align="center"><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/71503553-2554-4e7c-8ec1-6de1ec953973" width="200"></p>
-A tool that automates the migration of <a href="https://www.nextgen.com/solutions/interoperability/mirth-integration-engine/mirth-connect-downloads" target="_blank">Mirth Enterprise Service Bus</a> channels and code templates from one instance to another.
+
+
+<p align="center"><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/13eb2ff1-8386-41c3-8c1b-aba7127b112a" width="200"></p>
+Mirth Migrator automates the migration of <a href="https://www.nextgen.com/solutions/interoperability/mirth-integration-engine/mirth-connect-downloads" target="_blank">Mirth Enterprise Service Bus</a> channels and code templates from one instance to another.
 <h2>Features</h2>
 <ul>
   <li><b>Code Templates and Channel Migration</b><br/>Code templates, channels, and even entire Channel Groups or Code Template Libraries can be migrated between Mirth instances with a single click. Code templates of directly or indirectly referenced functions can be automatically migrated with the channels.<br/><br/>
@@ -32,7 +34,7 @@ If a component already exists at the destination instance, conflict handling wil
   <tr><td><b>8.</b></td><td>Choose the <b>tab "Library Resources"</b> (2nd tab) in the up-popping dialog and activate the <b>checkbox</b> for <b>"Mirth Migrator"</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
   <tr><td><b>9.</b></td><td><b>Press ok</b>, <b>save</b> the channel changes and <b>deploy</b> the channel</td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
   <tr><td><b>10.</b></td><td>Mirth Migrator should now be available under <b>http://&lt;YOUR&nbsp;MIRTH&nbsp;SERVER&gt;:1339/MirthMigrator</b><br/><br/>
-  <i>Please be aware that the Mirth Migrator needs to be configured before you can use it. Check the configuration section below for details</i></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
+  <i>$${\color{red}Please \space be \space aware \space that \space the \space Mirth \space Migrator \space needs \space to \space be \space configured \space before \space you \space can \space use \space it.}$$ $${\color{red}Check \space the \space configuration \space section \space below \space for \space details}$$</i></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd></td></tr>
 </table>
 
 <h2>Configuration</h2>
@@ -44,19 +46,23 @@ This configuration file can be found at: "&lt;Your&nbsp;Installation&nbsp;Path&g
 The configuration consists of 4 sections:
 <table>
   <tr><td colspan=2><b>sessionLifeSpanInMinutes</b></td><td>Allows to determine the maximum inactivity period for a user session in minutes.<br/><i>If the value is 0, the user session will not expire</i></td></tr>
-  <tr><td rowspan=2><b>environment</b></td><td>YYY</td><td>ZZZ</td></tr>
-  <tr><td>YYY</td><td>ZZZ</td></tr>
-  <tr><td rowspan=2><b>system</b></td><td>YYY</td><td>ZZZ</td></tr>
-  <tr><td>YYY</td><td>ZZZ</td></tr>
-  <tr><td colspan=2><b>excludeFromFunctionDetection</b></td><td>XXX</td></tr>
+  <tr><td rowspan=4><b>environment</b></td><td><b>id</b></td><td>A unique identifier of the environment<br/><i>1, 2, 3, etc.)</i></td></tr>
+  <tr><td><b>position</b></td><td>The order position of the environment <br/><i>1 will be displayed on top of the list, 2 will be displayed as second, etc.</i></td></tr>
+  <tr><td><b>name</b></td><td>The name of the environment <br/><i>e.g. Production, Test, Development, Fallback</i></td></tr>
+  <tr><td><b>color</b></td><td>The color in which servers of this environment will be shown <br/><i>use html colors</i></td></tr>
+  <tr><td rowspan=7><b>system</b></td><td><b>name</b></td><td>The name of the Mirth system<br/><i>Any name can be used, e.g. Production Server 1, My Test System</i></td></tr>
+  <tr><td><b>server</b></td><td>The name or ip of the Mirth server that should be accessed</td></tr>
+  <tr><td><b>port</b></td><td>The port at which the Mirth server exposes it's API <br/><i>By default, this port is <b>8443</b></i></td></tr>
+  <tr><td><b>environment</b></td><td>The <b>ID of the environment</b> to which this Mirth server should be assigned<br/><i>This ID must correspond to an id attribute of the environment section</i></td></tr>
+  <tr><td><b>description</b></td><td>An optional text that describes your Mirth environment<br/><i>e.g. "Hosts all medical channels" or "Server for administrative channels"</i></td></tr>
+  <tr><td><b>user</b></td><td>The Mirth user that Mirth Migrator should use to access this Mirth instance <br/><i>It makes sense to create a "system"-user on every Mirth instance that should be accessed by Mirth administrator. This might be a user like "system", or "maintanance", or "migration"</i></td></tr>
+  <tr><td><b>password</b></td><td>The password of the Mirth user that Mirth Migrator should use to access this Mirth instance</td></tr>
+  <tr><td colspan=2><b>excludeFromFunctionDetection</b></td><td>Mirth Migrator has a parser that detects function references for detecting user defined functions. <br/><br/>However there might be false positives like function calls in SQL statements or calls to Mirth maps. Those functions would be displayed as functions for which the source could not be identified. <br/><br/>For avoiding false positives, the function names can be added to this filter list.</td></tr>
 </table>
 
-<ul>
-  <li><b>sessionLifeSpanInMinutes</b><br/>Allows to determine the maximum inactivity period for a user session in minutes.<br/><i>If the value is 0, the user session will not expire</i></li>
-<li><b>environment</b><br/>Defines the environments to which the Mirth system can be assigned. The default configuration includes the following environments:<ul><li>Production</li><li>Test</li><li>Development</li></ul>This can be changed, of course, and an arbitrary number of environments can be added.</li>
-<li><b>system</b><br/></li>
-<li><b>excludeFromFunctionDetection</b><br/></li>
-</ul>
+Any <b>changes</b> of the configuration <b>are applied on the fly</b>. There is no need to restart the MIRTH_Migrator channel.
+
+When you access Mirth Migrator, it asks you to log in. Simply use your Mirth account of the Mirth instance at which the MIRTH_MIGRATOR channel is running.
 
 <h2>Kudos</h2>
 Mirth Migrator makes use of a number of other open source projects:
