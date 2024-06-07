@@ -35,7 +35,7 @@ If a component already exists at the destination instance, conflict handling wil
   <tr><td><b>8.</b></td><td>Choose the <b>tab "Library Resources"</b> (2nd tab) in the up-popping dialog, activate the <b>checkbox</b> for <b>"Mirth Migrator"</b> and <b>press OK</b></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/5dc67b83-c667-475d-8a88-38e255928bfb" width="160"></kbd></td></tr>
   <tr><td><b>9.</b></td><td><b><b>Save</b> the channel changes and <b>deploy</b> the channel</td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/809cc23e-012a-4ba0-a2f4-6fc3eda93155" width="160"></kbd></td></tr>
   <tr><td><b>10.</b></td><td>Mirth Migrator should now be available under <b>http://&lt;YOUR&nbsp;MIRTH&nbsp;SERVER&gt;:1339/MirthMigrator</b><br/><br/>
-  <i>$${\color{red}Please \space be \space aware \space that \space the \space Mirth \space Migrator \space needs \space to \space be \space configured \space before \space you \space can \space use \space it.}$$ $${\color{red}Check \space the \space configuration \space section \space below \space for \space details}$$</i></td><td><kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/c52cb3f6-b78f-4cca-887f-00407c005f67" width="160"></kbd></td></tr>
+  <i>$${\color{red}Please \space be \space aware \space that \space the \space Mirth \space Migrator \space needs \space to \space be \space configured \space before \space you \space can \space use \space it.}$$ $${\color{red}Check \space the \space configuration \space section \space below \space for \space details}$$</i></td><td><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/c52cb3f6-b78f-4cca-887f-00407c005f67" width="160"></td></tr>
 </table>
 
 <h2>Configuration</h2>
