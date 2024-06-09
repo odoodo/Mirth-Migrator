@@ -1,0 +1,722 @@
+/*	==========================================================================================
+										Generic styles
+	==========================================================================================
+*/
+
+#contextmenu{
+    display:none;
+    position:absolute;
+    border:1px solid black;
+    background:#fff;
+}
+
+ul{
+    margin-bottom: 5px;
+}
+
+#contextmenu li{
+    padding:3px;
+    margin:0;
+	font-size: 9px;
+    cursor:pointer;
+}
+
+#contextmenu li:hover{
+    background-color:#eee;
+}
+
+#hoveredMessageText{
+	font-size: 9px;
+	text-shadow: 3px 0 0 #FFFFF0, -3px 0 0 #FFFFF0, 0 3px 0 #FFFFF0, 0 -3px 0 #FFFFF0, 2px 2px #FFFFF0, -2px -2px 0 #FFFFF0, 2px -2px 0 #FFFFF0, -2px 2px 0 #FFFFF0;
+}
+
+#messageContentP {
+    margin-top: 0;
+    margin-bottom: 2px;
+    margin-left: 0;
+    margin-right: 0;
+	box-sizing: border-box;
+	white-space: pre;
+}
+
+#messageDisplayPanel
+{	
+	overflow: auto;
+    max-width: 86vw;
+}
+#displayMessageList
+{	
+	overflow-y: auto;
+	overflow-x: hidden;
+    max-width: 86vw;
+	max-height: 170px;
+}
+
+#displayMessageList2
+{	
+    max-width: 86vw;
+	max-height: 200px;
+}
+
+#attributeTable tr:nth-child(even) {
+    background-color: DeepSkyBlue;
+}
+#attributeTable tr:nth-child(odd) {
+    background-color: LightSkyBlue;
+}
+
+.tooltip-inner {
+    white-space: pre-wrap;
+}
+
+.touch{
+	cursor: pointer;
+}
+
+.highlight{
+    background-color: yellow;
+	cursor: pointer;
+}
+/* will be applied with the standard highlight class as groups should remain bold */
+.highlightGroup{
+	font-weight:      bold;
+}
+.flashOnCopyContent{
+    background-color: orange;
+    transition: background-color 0.1s;
+	cursor: pointer;
+}
+
+.flashOnCopyMirth{
+    background-color: aqua;
+    transition: background-color 0.1s;
+	cursor: pointer;
+}
+
+.flashOnCopyMirthShort{
+    background-color: #99ff99;
+    transition: background-color 0.1s;
+	cursor: pointer;
+}
+
+.del {
+	text-decoration: none;
+	color: #b30000;
+	background: #fadad7;
+}
+.ins {
+	background: #eaf2c2;
+	color: #406619;
+	text-decoration: none;
+}
+
+body {
+	font-family:        arial, helvetica;
+	font-size:          12px;
+	background-color:	#ffffff;
+	color:              #000000;
+	white-space:        normal;
+}
+
+h1 {
+	color:              #000000;
+	font-size:          16px;
+}
+h2 {
+	color:              #000000;
+	font-size:          14px;
+}
+h3 {
+	color:              #000000;
+	font-size:          13px;
+}
+
+hr {
+	border:             0;
+	color:              #9c304e;
+	background-color:   #9c304e;
+	width:              100%;
+	height:             1px;
+}
+
+p {
+	white-space:        normal;
+}
+
+li {
+	white-space:        normal;
+}
+
+img {
+	border:             none;
+}
+img.operation {
+	padding-left:		4px;
+	padding-right:		4px;
+	border:				none;
+}
+
+a {
+	font-size:          12px;
+	text-decoration:    none;
+	color:              #9c304e;
+}
+a:hover {
+	color:              #5c002e;
+}
+a.operation {
+	padding-left:       5px;
+	padding-right:      5px;
+}
+
+/*	-------------------------------------------------
+	mm	: main menu styles
+	cat	: category styles (folder nodes in a tree)
+	-------------------------------------------------
+*/
+a.mm, a.cat {
+	color:              #9c304e;
+}
+a.mm:hover, a.cat_hover {
+	color:              #5c002e;
+}
+a.mm_selected, a.cat_selected {
+	color:              #9c304e;
+	font-weight:        bold;
+}
+
+/*	-------------------------------------------------
+					table styles
+	-------------------------------------------------
+*/
+span.header {
+	color:              #9c304e;
+	font-size:          18px;
+	font-weight:        bold;
+}
+span.fade {
+	color:              #999999;
+}
+
+table.info {
+	width:              75%;
+	background-color:   #eeeeee;
+	border:             1px solid #9c304e;
+	margin-top:         50px;
+}
+
+table.login {
+	width:              35%;
+	background-color:   #eeeeee;
+	border:             1px solid #9c304e;
+	margin-top:         50px;
+}
+table.error {
+	width:              75%;
+	background-color:   #eeeeee;
+	border:             1px solid #9c304e;
+	margin-top:         50px;
+}
+td.title {
+	text-align:         left;
+	vertical-align:     middle;
+	padding:            6px;
+	font-size:          14px;
+	font-weight:        bold;
+}
+td.text {
+	text-align:         left;
+	vertical-align:     top;
+	padding:            6px;
+}
+td.buttons {
+	text-align:         center;
+	vertical-align:     middle;
+	padding-top:        10px;
+	padding-bottom:     6px;
+}
+table.list {
+	width:				84.8vw;
+	background-color:   #eeeeee;
+	border:             3px solid #eeeeee;
+	border-spacing:     0px;
+	border-collapse:    collapse;
+}
+thead.list {
+	font-weight:        bold;
+}
+tbody.list {
+	font-weight:        normal;
+}
+tr.list_0 {
+	background-color:   #eeeeee; 
+}
+tr.list_1 {
+	background-color:   #dddddd;
+}
+/* represents a group of channels or code templates */
+tr.group {
+	font-weight:		bold;
+	border-style:		double;
+	background-color:   LightBlue; 
+}
+/* represents a group of unassigned channels */
+tr.unassigned {
+	font-weight:		bold;
+	border-style:		double;
+	background-color:   LightSalmon;  
+}
+td.operation {
+	width:				1%;
+	font-weight:		bold;
+	text-align:			center;
+}
+td.list_0 {
+	background-color:   #eeeeee;
+	border:             none;
+	padding:            3px;
+}
+td.list_1 {
+	background-color:   #dddddd;
+	border:             none;
+	padding:            3px;
+}
+
+.refreshButton {
+	margin-right: 10px;
+	width: 35px;
+	height: 17px;
+	font-size: 7px;
+	text-indent: -2px;
+    box-shadow: 0 9px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+}
+.refreshButton:hover {
+    box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
+}
+.refreshButton:active {
+  box-shadow: 0 5px #666;
+  transform: translateY(4px);
+}
+
+table.selection {
+	width:              100%;
+	background-color:   #ffffe0;
+	border:             3px solid #ffffe0;
+	border-spacing:     0px;
+	border-collapse:    collapse;
+	margin-bottom:      15px;
+}
+tr.selection_0 {
+	background-color:   #ffffe0;
+}
+tr.selection_1 {
+	background-color:   #ffffcc;
+}
+td.selection_0 {
+	background-color:   #ffffe0;
+	border:             none;
+	padding:            3px;
+}
+td.selection_1 {
+	background-color:   #ffffcc;
+	border:             none;
+	padding:            3px;
+}
+
+
+table.grille_horaire {
+	border:             none;
+	border-collapse:	collapse;
+}
+
+
+/*	-------------------------------------------------
+					CForms styles
+	-------------------------------------------------
+*/
+table.form {
+	background-color:   #eeeeee;
+	border:             1px solid #9c304e;
+	margin-top:         20px;
+	padding:			5px;
+}
+thead.form {
+	font-weight:        bold;
+}
+th.form {
+	padding:        	10px;
+}
+tbody.form {
+	font-weight:        normal;
+	text-align:         left;
+}
+tr.form, tr.form0 {
+}
+tr.form1 {
+	background-color:	#e0e0e0;
+}
+td.form {
+	padding:            10px;
+}
+
+textarea {
+	background-color:   #ffffff;
+	font-family:        arial, helvetica;
+	font-size:          11px;
+}
+
+#output{
+  overflow:hidden;
+  width:250px;
+  border-radius:6px;
+  box-shadow:2px 2px 8px rgba(0,0,0,.3);
+}
+
+#outputName{
+  margin:5px auto;
+  border-radius:6px;
+  box-shadow:2px 2px 8px rgba(0,0,0,.3);
+}
+
+
+input,select {
+	font-family:        arial, helvetica;
+	font-size:          11px;
+}
+
+input.sort {
+	width:              24px;
+}
+
+input.submit {
+	margin-left:        4px;
+	margin-right:       4px;
+}
+
+
+/*	-------------------------------------------------
+			Rich text styles (FCKeditor)
+	-------------------------------------------------
+*/
+.fo_theme {
+	font-family:        arial, helvetica;
+	font-size:			24px;
+	color:				#9c304e;
+}
+.fo_subtheme,span.fo_subtheme {
+	font-family:        arial, helvetica;
+	font-size:			18px;
+	font-style:			italic;
+	color:				#9c304e;
+}
+.fo_type {
+	font-family:        arial, helvetica;
+	font-size:			9px;
+	color:				#000000;
+}
+.fo_year {
+	font-family:        arial, helvetica;
+	font-size:			28px;
+	color:				#000000;
+}
+.fo_departement {
+	font-family:        arial, helvetica;
+	font-size:			16px;
+	color:				#000000;
+}
+.fo_service {
+	font-family:        arial, helvetica;
+	font-size:			14px;
+	color:				#000000;
+}
+.fo_unite {
+	font-family:        arial, helvetica;
+	font-size:			12px;
+	color:				#000000;
+}
+.fo_title {
+	font-family:        arial, helvetica;
+	font-size:			16px;
+	font-weight:		normal;
+	margin-bottom:		5px;
+	color:				#9c304e;
+}
+.fo_body {
+	font-family:        arial, helvetica;
+	font-size:			11px;
+	color:				#000000;
+}
+
+div.html {
+	float: left;
+	background-color: #ffffff;
+	padding: 2px;
+	margin: 2px;
+	border: 1px solid #808080;
+	width: 90%;
+}
+
+
+/*	==========================================================================================
+							Styles for the Stages monthly calendar page
+	==========================================================================================
+*/
+div#fc_calendarDiv {
+	visibility:			hidden;
+	position:			absolute;
+	z-index:			10;
+	background-color:	#ffffff;
+}
+
+div#fc_dayDiv {
+	visibility:			hidden;
+	position:			absolute;
+	z-index:			11;
+	background-color:	#ffffb0;
+	border:				1px solid #909090;
+	padding:			1px;
+}
+
+div.hidden {
+	visibility:			hidden;
+	position:			absolute;
+}
+
+table.sm {
+	margin:				0;
+	padding:			0;
+	width:				95%;
+	background-color:	#f7f7f7;
+}
+.sm_day {
+	font-size:			11px;
+	white-space:		nowrap;
+	margin:				0;
+	padding:			1px;
+	text-align:			left;
+}
+.sm_day_header {
+	font-weight:		bold;
+	text-align:			center;
+}
+
+.sm_head {
+	height:				15px;
+	margin:				0px;
+	padding:			2px;
+	text-align:			center;
+	vertical-align:		middle;
+	color:				#888888;
+}
+td.sm_head_weekend {
+	color:				#bb6666;
+}
+td.sm_head_today {
+	background-color:	#d5eed5;
+}
+
+span.sm_weekday {
+	font-size:			10px;
+}
+
+td.sm_workday, td.sm_weekend, td.sm_today, td.sm_service, td.sm_highlight, td.sm_holiday_1, td.sm_holiday_2 {
+	margin:				0px;
+	padding:			2px;
+	white-space:		nowrap;
+	vertical-align:		middle;
+}
+.sm_service {
+	color:				#444444;
+	background-color:	#e8e8e8;
+	text-align:			right;
+}
+.sm_workday {
+	color:				#303030;
+	font-size:			10px;	
+	background-color:	#eeeeee;
+}
+.sm_weekend {
+	color:				#303030;
+	font-size:			10px;
+	background-color:	#eedddd;
+}
+.sm_today {
+	color:				#303030;
+	font-size:			10px;
+	background-color:	#d5eed5;
+}
+.sm_holiday_1 {
+	color:				#303030;
+	font-size:			10px;
+	background-color:	#ffcc99;
+}
+.sm_holiday_2 {
+	color:				#303030;
+	font-size:			10px;
+	background-color:	#d0d0e0;
+}
+
+/*	==========================================================================================
+			Styles for the Flooble hierarchical selection lists (flooble_hier.js)
+	==========================================================================================
+*/
+.hier_select_pulldown {
+	padding:		2px; 
+	border:			1px solid #000000; 
+	background:		#ffffff; 
+	color:			#000000; 
+}
+
+a.hier_select_pulldown {
+	text-decoration:	none;
+}
+a.hier_select_inner {
+	text-decoration: none;
+	color: #000000;
+}
+a.hier_select_inner:hover {
+	text-decoration: none; color:#ffffff;
+}
+
+.hier_select_inner_div {
+	padding:	1px;
+	color:		#000000;
+	cursor:		pointer;
+	text-align:	right;
+}
+.hier_select_inner_active {
+	border:		1px solid #6666CC;
+	background:	#000066;
+	color: 		#ffffff;
+	cursor:		pointer;
+	text-align:	right;
+}
+
+/*	==========================================================================================
+								Formations calendar styles
+		
+		fm : styles for Formations Monthly calendar
+	==========================================================================================
+*/
+table.fm_dayofmonth {
+	width:				100%;
+	margin:				0px;
+	padding:			0px;
+	text-align:			left;
+}
+span.fm_display_month, span.fm_other_month {
+	text-decoration:	none;
+	font-size:			15px;
+	font-weight:		bold;
+}
+.fm_display_month {
+	color:				#555555;
+}
+.fm_other_month {
+	color:				#aaaaaa;
+}
+
+table.fm_calendar {
+	margin:				0;
+	padding:			0;
+	width:				95%;
+	background-color:	#f7f7f7;
+}
+th.fm_calendar {
+	height:				15px;
+	margin:				0px;
+	padding:			5px;
+	text-align:			center;
+	vertical-align:		middle;
+	color:				#888888;
+}
+td.fm_workday, td.fm_weekend, td.fm_today, td.fm_holiday_1, td.fm_holiday_2 {
+	width:				14%;
+	height:				65px;
+	margin:				0px;
+	padding:			5px;
+	text-align:			left;
+	vertical-align:		top;
+}
+.fm_workday {
+	background-color:	#eeeeee;
+}
+.fm_weekend {
+	background-color:	#eedddd;
+}
+.fm_today {
+	background-color:	#d0e0d0;
+}
+.fm_holiday_1 {
+	background-color:	#ffcc99;
+}
+.fm_holiday_2 {
+	background-color:	#d0d0e0;
+}
+a.fm_desc {
+	font-size:          10px;
+	text-decoration:    none;
+	color:              #9c304e;
+}
+a.fm_desc:hover {
+	color:              #5c002e;
+}
+.display_none {
+	display:	none;
+}
+
+.display_inline {
+	display:	inline;
+}
+
+.display_block {
+	display:	block;
+}
+
+
+/*	==========================================================================================
+			Styles for the HL7 message view 
+	==========================================================================================
+*/
+
+textarea.message {
+	width: 97%;
+	height: 400px;
+	margin: 0px 8px 0px 8px;
+	border: 1px solid black;
+	padding: 4px;
+	font-family: courier;
+	font-size: 11px;
+}
+
+div.hl7_hierarchical {
+	padding:			5px 5px 9px 5px;
+	font-family:		monospace;
+}
+
+span.hl7_expand {
+	padding-left:		5px; 
+	padding-right:		5px;
+	color:				blue;
+}
+
+span.hl7_noexpand {
+	padding-left:		16px; 
+	padding-right:		5px;
+	color:				blue;
+}
+
+div.hl7_div {
+	padding-left:		15px;
+	display:			none;
+}
+
+small.hl7_description {
+	padding-right:		5px;
+	color:				green;
+}
+
+small.hl7_reps {
+	padding-right:		5px;
+	color:				red;
+}

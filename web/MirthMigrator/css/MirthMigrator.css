@@ -1,0 +1,632 @@
+table.parameters tr td {
+	border: none !important;
+	border-collapse: collapse;
+	vertical-align: top;
+	text-align: left;
+}
+
+#flexBoxWrap{
+    display: -webkit-flex;
+    display: flex;
+    width: 80vw;
+    height: 20vh;
+    flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+.selectionSection{
+    display: -webkit-flex;  
+    display:flex;
+    align-items: center;
+    width: 25%;
+    height: 100%;
+    flex-direction: column;
+    -webkit-flex-direction: column;
+   
+}
+#sourceSelection{
+ visibility: hidden;
+}
+#destSelection{
+ visibility: hidden;
+}
+
+.flexBoxTables{
+    display: -webkit-flex;
+    display: flex;
+    border: solid 2px;
+    border-color: grey;
+    margin-top:5px;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+    padding:3px;
+	vertical-align: top;
+}
+
+.flexBoxLegend{
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+}
+
+#middleRowSelection{
+    display: -webkit-flex;
+    display: flex;
+    width: 100%;
+    height: 40%;
+}
+
+#sourceSystem{
+    align-items: flex-start;
+    margin-left: 10px;
+}
+#destSystem{
+    align-items: flex-start;
+    margin-left: 10px;
+}
+
+#compTypeSelect{
+    display: -webkit-flex;
+    display: flex;
+    width: 25%;
+    height: 25%;
+    vertical-align: baseline;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    padding:5px;
+    margin:5px;
+}
+.select{
+    display:inline-block;
+    font-size: 20px;
+    margin-left: 8px;
+    margin-bottom: 18px;
+
+}
+
+.selected {
+    background-color: rgba(0,0,0,0.4) !important;
+    color: #fff;
+}
+#flexBoxButtons{
+    display: inline-block;
+    visibility: hidden;
+}
+
+/*	==========================================================================================
+										table styles
+	==========================================================================================
+*/
+
+.componentTableLeft{
+	vertical-align: top;	
+}
+
+.componentTableRight{
+	vertical-align: top;	
+}
+
+.tableHeader{
+    width:29.5vw;
+    font-family: arial, sans-serif;
+    font-size:80%;
+    text-align: left;
+}
+.tableHeader tr{
+    /*background-color: orange; */
+	border-spacing: 0px;
+}
+
+.tableHeader th.nameRow{
+    width:60%;
+    text-align: left;
+}
+.tableHeader th.iconRow{
+    width:6%;
+    text-align: center;
+}
+.tableHeader th.lastModifiedRow{
+    width:23%;
+    text-align: center;
+}
+.tableHeader th.revisionRow{
+    text-align: center;
+}
+
+.tableDiv{
+    width:20vw;
+    max-height:50vh;
+    overflow: auto;
+    width:100%;
+    border-spacing: 0px;
+}
+.tableDiv tr{
+    cursor: pointer;
+    text-align: left;
+	font-family: arial, sans-serif;
+    font-size:80%;
+    border-spacing: 0px;
+    vertical-align: top;
+    text-shadow:0 0 1px transparent;
+}
+.tableDiv td:nth-child(1){
+    width:62%;
+    text-align: left;
+}
+.tableDiv td:nth-child(2){
+    width:6%;
+    text-align: center;
+}
+
+.tableDiv td:nth-child(3){
+    width:27%;
+    text-align: center;
+}
+
+.tableDiv td:nth-child(4){
+    text-align: center;
+}
+
+.right {
+    text-align:right; 
+}
+
+.left {
+    text-align:left; 
+}
+
+.center {
+	text-align: center;; 
+}
+
+#migrationReport{
+	max-width: 1024px;
+	z-index:10; 
+	position:fixed;
+	padding: 20px; 
+	border-radius: 5px;
+	margin:auto; 
+    height:auto; 
+    background:#eef;
+	border: 1px solid black;
+	visibility: hidden;
+	word-wrap: break-word;
+    overflow: auto;
+}
+
+#confirmButton{
+	margin:auto;
+	text-align: center;
+	display:block
+  }
+  
+#migrationIndicator{
+	max-width: 900px;
+	z-index:11; 
+	text-align: center;
+	position:fixed;
+	margin:auto; 
+    height:auto; 
+	visibility: hidden;
+    overflow: auto;
+	border: 1px solid black;
+	border-radius: 5px;
+	background:#fff;
+ }
+/*	==========================================================================================
+										Legend box styles
+	==========================================================================================
+*/
+
+#environments{ 
+	list-style-type: none;
+}
+
+#environments li{ 
+    font-size: 1vw;
+     border: 3px;
+    border-color: red;
+}
+.green {
+    background-color: green;
+    font-weight: bold;
+}
+.red {
+    background-color: red;
+    font-weight: bold;
+}
+.grey {
+    background-color: grey;
+    font-weight: bold;
+}
+.blue {
+    background-color: blue;
+    font-weight: bold;
+}
+.yellow {
+    background-color: yellow;
+    font-weight: bold;
+}
+.black {
+    background-color: black;
+    font-weight: bold;
+}
+.disabledOption{
+    background-color: white;
+    font-weight: bold;
+}
+
+.checkBox{
+	display: flex;
+	align-items: center;
+}
+
+#omitReferencedCodeTemplatesDivLeft{
+	display: none;
+	vertical-align: middle;
+}
+
+#omitReferencedCodeTemplatesDivRight{
+	display: none;
+	vertical-align: middle;
+}
+
+.hiddenBox{
+    visibility: hidden;
+}
+
+.componentCorrespondance{
+    background-color: coral;
+	cursor: pointer;
+}
+.revisionConflict{
+    border: 3px;
+    border-color: red;
+}
+
+.selectedComponent{
+    float:left;
+}
+#contentHeader{
+   visibility: hidden;
+   cursor:pointer;
+   width:100%;
+}
+#metaDataSection{
+    visibility: hidden;
+    display:inline-block;
+    width: 80vw;
+}
+.metaDataTable{
+    font-family: arial, sans-serif;
+    max-width: 80vw;
+    font-size:90%;
+    border-collapse: collapse;
+    padding:5px;
+    margin:3px;
+    border: 1px solid gray
+}
+.metaDataTable th{
+    background-color: orange;
+	font-weight: bold;
+    text-align: left;
+	padding:3px;
+    border: 1px solid gray
+}
+
+.metaDataTable td{
+    padding:3px;
+    border: 1px solid gray
+}
+.metaDataTable tr{
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 5px;
+    text-shadow:0 0 1px transparent;
+}
+.metaDataTable tr:nth-child(even) {
+    background-color: #dddddd;
+}
+.metaDataTable tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+#preComponentContent{
+    visibility:hidden; 
+    border: solid 2px;
+    border-color: grey;
+}
+.wrapContent{
+    height:93%;
+    width:98.5%;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+#description{
+    cursor: pointer;
+}
+#selectedComponent{
+    cursor: pointer;
+}
+#collapseContentIcon{
+    visibility: hidden;
+    float:left;
+    cursor:pointer;
+}
+#collapseMetaDataIcon{
+    visibility: hidden;
+    float:left;
+    cursor:pointer;
+}
+/*	==========================================================================================
+										Conflict styles
+	==========================================================================================
+*/
+
+#overlay {
+    position: fixed; /* Sit on top of the page content */
+    display: none; /* Hidden by default */
+    width: 100%; /* Full width (cover the whole page) */
+ //   height: 100%; /* Full height (cover the whole page) */
+    overflow: auto;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.5); /* Black background with opacity */
+}
+
+#HtmlToolTip{
+	max-width: 900px;
+	z-index:10; 
+	position:fixed;
+	padding: 20px; 
+	border-radius: 25px;
+	margin:auto; 
+    height:auto; 
+    background:#eef;
+	border: 1px solid black;
+	visibility: hidden;
+	word-wrap: break-word;
+    overflow: auto;
+}
+
+#diffoutput table{
+    max-width: 80vw;
+}
+#conflictDiv{
+    width:100%;
+    height:100%;
+    display:none;
+    flex-direction: column;
+    background-color: ghostwhite;
+    z-index: 3;
+    overflow-y: auto;
+    position: absolute;
+    /*right: 46.1%;
+    bottom: 65%;
+    */
+}
+
+.componentVersionConflict{
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+#mirthVersionConflict{
+    display:none;
+    background-color:orange;
+    width:99%;
+    padding:5px;
+    z-index: 4;
+    cursor: default;
+    margin:5px;
+}
+#componentVersionConflict{
+    background-color:orange;
+    padding:5px;
+    z-index: 4;
+    cursor: default;
+    margin:5px;
+    height: auto;
+}
+
+#conflict_title{
+    color:red;
+}
+#buttonArea2{
+    margin-top: 10px;
+    margin-bottom: 5px;
+    display:flex;
+    display:-webkit-flex;
+//    flex-direction: column;
+    justify-content: space-between;
+}
+#checkboxDiv input{
+    vertical-align: middle;
+}
+
+#conflictMetaDataSection{
+    z-index: 4;
+    margin-bottom: 8px;
+}
+#diffoutput{
+    font-size: 100%;
+    margin-top: 8px;
+  //  overflow: auto;
+    max-width: 98vw;
+  //  height: 90vh;
+}
+
+
+#conflictCompareBeautifier{
+    font-size: 100%;
+    margin-top: 8px;
+    overflow: auto;
+    max-width: 150vw;
+
+}
+
+body.wait, body.wait *{
+ cursor: wait !important;   
+}
+
+.reloadOuter2 {
+	position: absolute;
+	z-index: 2;
+	top: 20%;
+	left: 50%;
+	transform:translateX(-50%);
+}
+
+.popupOuter {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+#loginPopup{
+	background-image: linear-gradient(45deg, #FFFFFF, rgb(0, 153, 51, 0.7));
+}
+
+#reloadPopup{
+	background-image: linear-gradient(45deg, #FFFFFF, rgb(255, 122, 89, 0.7));
+}
+
+#errorPopup{
+	background-image: linear-gradient(45deg, #FFFFFF, rgb(255, 122, 89, 0.7));
+}
+
+.containsFunction{
+ color: #aeb0a9 !important;
+}
+
+.popupInner {
+	display: none;
+	position: absolute;
+	top: 20%;
+	left: 50%;
+	transform:translateX(-50%);
+	box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.5);
+	width: 320px;
+	display: flex;
+	border: 3px;
+	flex-direction: column;
+	align-items: center;
+	background-color: #fff;
+	color: #000;
+	text-align: center;
+	border-radius: 20px;
+	padding: 30px 30px 50px;
+	 
+	-- background-image: linear-gradient(45deg, #FFFFFF, rgb(255, 122, 89));
+  img {
+    width: 300px;
+    margin-bottom: 15px;
+  }
+  #heading{
+    font-size: 18px;
+	font-weight: bold;
+  }
+  #smallText{
+    font-size: 8px;  
+  }
+  .buttonEnabled {
+    background-color: #009933;
+    border: none;
+    border-radius: 5px;
+    width: 215px;
+    padding: 10px;
+    font-size: 16px;
+    color: white;
+    box-shadow: 0px 6px 18px -5px rgba(0, 153, 51, 1);
+  }
+  .buttonDisabled {
+    background-color: #d9d9d9;
+    border: none;
+    border-radius: 5px;
+    width: 215px;
+    padding: 10px;
+    font-size: 16px;
+    color: #cccccc;
+    box-shadow: 0px 6px 18px -5px rgba(217, 217, 217, 1);
+  }
+  .buttonConfirmReload{
+    background-color: #ed6755;
+    border: none;
+    border-radius: 5px;
+    width: 215px;
+    padding: 10px;
+    font-size: 16px;
+    color: white;
+    box-shadow: 0px 6px 18px -5px rgba(237, 103, 85, 1);
+  }
+  .buttonConfirmError{
+    background-color: #ed6755;
+    border: none;
+    border-radius: 5px;
+    width: 215px;
+    padding: 10px;
+    font-size: 16px;
+    color: white;
+    box-shadow: 0px 6px 18px -5px rgba(237, 103, 85, 1);
+  }
+  #loginInfo{
+	color: red;
+	font-weight: bold;
+	line-height: 26px;
+  }
+   #errorInfo{
+	color: red;
+	font-weight: bold;
+	line-height: 26px;
+  }
+  input {
+	display: block;
+	width: 200px;
+	margin-bottom: 10px;
+	padding: 8px;
+	border: 1px solid #ccc;
+	border-radius: 3px;
+  }
+  #login-form{
+
+  }
+}
+
+.versionContainer {
+    position: relative;
+    display: inline-block;
+}
+
+.versionImage {
+	    margin: 20px;
+    max-width: 200px; 
+    height: auto;
+    position: relative;
+    display: inline-block;
+}
+
+.versionNumber {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: black;
+	font-weight: bold;
+    font-size: 8px;
+}

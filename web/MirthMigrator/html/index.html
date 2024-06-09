@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+		<link rel="stylesheet" type="text/css" href="/css/app.css"/>
+		<link rel="stylesheet" type="text/css" href="/css/vs.min.css"/>
+		<link rel="stylesheet" type="text/css" href="/css/jquery-ui.css"/>
+		<link rel="stylesheet" type="text/css" href="/css/MirthMigrator.css"/>
+		<link rel="stylesheet" type="text/css" href="/css/diffview.css"/>		
+		
+		<title>Mirth Migration</title>
+	</head>
+	<body>
+		<script type="text/javascript" src="/js/jquery-3.7.1.min.js"></script>
+		<script type="text/javascript" src="/js/jquery-ui.js"></script>
+		<script type="text/javascript" src="/js/highlight.pack.js"></script>
+		<script type="text/javascript" src="/js/MirthMigrator.js"></script>
+		<script type="text/javascript" src="/js/difflib.js"></script>
+		<script type="text/javascript" src="/js/diffview.js"></script>
+
+		<div class="versionContainer" id="versionContainer">
+			<a href="https://github.com/odoodo/Mirth-Migrator" target="_blank"><img class="versionImage" id="versionImage" src="/img/logo.png" alt="Mirth Migrator"/></a>
+			<span class="versionNumber" id="versionNumber"></span>
+		</div>
+		<div class="popupOuter" id="dialog">
+			<div class="popupInner" id="loginPopup">
+				<p id="heading">Login</p>
+				<form id="login-form">
+				  <label id="loginInfo"></label>
+				  <input type="text" id="username" placeholder="Username" required>
+				  <p id="smallText" align="left">use your mirth login</p>
+				  <input type="password" id="password" placeholder="Password" required>
+				  <button id="submit" class="buttonDisabled" type="button" disabled="disabled">Login</button>
+				</form>
+			</div>
+			<div class="popupInner" id="reloadPopup" style="display: none;">
+				<img src="/img/update.png" alt="reload image" />
+				<p>The configuration has changed and Mirth Migrator needs to be reloaded</p>
+				<button id="confirmReload" class="buttonConfirmReload">Reload</button>
+			</div>
+			<div class="popupInner" id="errorPopup" style="display: none;">
+				<img id="errorImage" src="/img/error.png" alt="error image" />
+				 <label id="errorInfo"></label>
+				<button id="confirmError" class="buttonConfirmError">Confirm</button>
+			</div>
+		</div>
+		<div id="migrationMainWindow">
+			<div id="flexBoxWrap">
+				<div id="sourceSelection" class="selectionSection"> 
+					<h2 style="float:left;font-size: 1.2vw;"> Mirth Instance A:</h2>
+					<select id="sourceSystem" class="" onchange="systemChanged(this.id)"> 
+						<option  class="disabledOption" value="Please select a System" disabled="disabled" selected="selected">Please select a System</option>
+					</select>	
+				</div>
+				<div id="compTypeSelect">
+					<input type="radio" id="channels" class="select" name="compType" value="channelGroup" onclick="populateComponentTables()"> 
+						<label style="vertical-align:baseline;font-size: 1.2vw;" for="channels"> Channels
+						</label>
+					</input>
+					<input type="radio" id="codeTemplates" class="select" name="compType" value="codeTemplateLibrary" onclick="populateComponentTables()">
+						<label style="vertical-align:baseline;font-size: 1.2vw;"  for="codeTemplates"> Code templates
+						</label>
+					 </input>
+				</div>
+				<div id="destSelection" class="selectionSection"> 
+					<h2 style="float:left;font-size: 1.2vw;"> Mirth Instance B:</h2>
+					<select id="destSystem" class="" onchange="systemChanged(this.id)">
+						<option  class="disabledOption" value="Please select a System" disabled="disabled" selected="selected">Please select a System</option>
+					</select>
+				</div>
+				<div class="flexBoxLegend">
+						<ul id="environments"></ul>
+				</div>
+			</div>
+			<!-- The custom html tooltip that will be displayed when hovering the info buttons -->
+			<div id="HtmlToolTip"></div>
+
+			<!-- Component tables -->
+			<table id="middleRowSelection">
+				<tr>
+					<td id="componentTableLeft" class="hiddenBox">
+						<div class="flexBoxTables">
+							<div class="availableComponents">
+								<h2 id="sourceSystemHeader"></h2>
+							</div>
+							<div id="tableSource">
+								<table class="tableHeader">
+									<thead>
+										<tr>
+											<th class="nameRow">Name</th>
+											<th class="iconRow">Info</th>
+											<th class="lastModifiedRow">LastModified</th>
+											<th class="revisionRow">Rev</th>
+										</tr>
+									</thead>
+								</table>
+								<div class="tableDiv">
+								<table id="sourceComponents" class="tableDiv">
+									<tbody id="sourceSystemItems" class="list"></tbody>
+								</table>
+								</div>
+							</div>
+							<div  id="omitReferencedCodeTemplatesDivLeft" class="checkbox">
+								<input type="checkbox" name="omitReferencedCodeTemplatesLeft" onclick="syncCheckbox(this, 'omitReferencedCodeTemplatesCheckboxRight');" id="omitReferencedCodeTemplatesCheckboxLeft" value="Include code templates"/>
+								<label for="omitReferencedCodeTemplatesCheckbox">Do <b><u>not</u></b> migrate referenced code templates</label> 
+							</div>
+						</div>		
+					</td>
+					<td id="flexBoxButtons" align="center" valign="top"><br/><br/><br/><br/>
+							<button id="migrateButton" style="margin-top:4px; visibility:hidden;" value="Migrate" onclick="checkSelectedComponents()"><img src="/img/arrowLeft.png" id="migrationDirectionIcon"/></button><br/><br/>
+							<button id="compareButton" style="margin-top:10px; visibility:hidden;" value="Compare" onclick="compareComponent()"><img src="/img/compare.png"/></button><br/>
+							<button id="refreshButton" style="margin-top:10px;" value="Refresh" onclick="refresh()"><img src="/img/refresh.png"/></button>
+					</td>
+					<td id="componentTableRight" class="hiddenBox">
+						<div class="flexBoxTables">	
+							<div style="width:100%" id="availableComponents"> 
+								<h2 id="destSystemHeader"></h2>
+							</div>
+							<div id="tableDest">
+								<table class="tableHeader"> 
+									<thead>
+										<tr>
+											<th class="nameRow">Name</th>
+											<th class="iconRow">Info</th>
+											<th class="lastModifiedRow">Last Modified</th>
+											<th class="revisionRow">Version</th>
+										</tr>
+									</thead>
+								</table>
+								<div class="tableDiv">
+									<table id="destComponents" class="tableDiv">
+										<tbody id="destSystemItems" class="list">
+										</tbody>
+									</table>
+								</div>
+							</div>
+							<div  id="omitReferencedCodeTemplatesDivRight" class="checkbox">
+								<input type="checkbox" name="omitReferencedCodeTemplatesRight" onclick="syncCheckbox(this, 'omitReferencedCodeTemplatesCheckboxLeft')" id="omitReferencedCodeTemplatesCheckboxRight" value="Include code templates"/>
+								<label for="omitReferencedCodeTemplatesCheckbox">Do <b><u>not</u></b> migrate referenced code templates</label> 
+							</div>
+						</div>
+					</td>
+				</tr>
+			</table>
+
+			<div id="metaDataSection">
+				<div>
+					<img id="collapseMetaDataIcon" src="/img/expand_down.png" onclick="toggleMetaData()"/> 
+					<h2 id="selectedComponent" onclick="toggleMetaData()"> </h2>
+				</div>
+				<div id="metaDataTable" class="metaDataTable">
+				 </div>	
+
+			</div>
+			<div id="contentSection" style="visibility:hidden">
+				<div> 
+					<img id="collapseContentIcon" src="/img/expand_down.png" onclick='toggleContent()'/> 
+					<h2 onclick='toggleContent()' id="contentHeader"> Content: </h2>
+				</div>
+				<pre id="preComponentContent">
+					<code id="componentCode" class="wrapContent">
+					</code>
+				</pre>
+			</div>
+		</div>
+		<!-- The migration confirmation dialog -->
+		<div id="migrationReport"></div>
+		<div class="noShow" id="migrationIndicator"><img src="/img/migrating.gif"/><br/><b>Migration in Progress...</b></div>
+		<div id="overlay">
+			<div id="mirthVersionConflict">
+				<h1 id="conflict_title" > Migration Conflict:</h1>
+				<div id="buttonArea">
+					<table>
+					<tbody>
+					<tr>
+						<td>
+							Issue:
+						</td>
+						<td>
+							The Mirth version of the source system differs from the Mirth version of the destination system.
+						</td>
+					</tr>
+					<tr>
+						<td>
+						</td>
+						<td id="sourceMirthVersion">
+						</td>
+					</tr>
+					<tr>
+						<td>
+						</td>
+						<td id="destMirthVersion">
+						</td>
+					</tr>
+						<tr id="buttonArea1"> 
+							<td>
+								<input type="submit" value="Cancel Migration" onclick="cancelMigration()"></input>
+							</td>
+							<td>
+								<input type="submit" value="Migrate" onclick="convertAll()"></input>
+							</td>
+						</tr>
+					</tbody>
+					</table>
+				</div>
+			</div>
+			<div id="conflictDiv">
+				<div id="componentVersionConflict">
+					<h1 id="conflict_title" > Migration Conflict:</h1>
+					<div>
+						<table>
+							<thead>
+							</thead>
+							<tbody>
+							<tr>
+								<td>
+									Component:
+								</td>
+								<td id="componentName">
+								</td>
+							</tr>
+							<tr>
+								<td>
+									Type:
+								</td>
+								<td id="componentType">
+								</td>
+							</tr>
+							<tr>
+								<td>
+									Issue:
+								</td>
+								<td id="errorMessages">
+								</td>
+							</tr>
+
+							</tbody>
+						</table>
+					</div>
+					<div id="buttonArea2">
+						<input type="submit" value="Cancel Migration" onclick="cancelMigration()">
+						</input>
+						<input id="skipComponent" type="submit" value="Skip Component" onclick="skipComponent()">
+						</input>
+						<input id="forceMigration" type="submit" value="Migrate" onclick="migrateAnyway()">
+						</input>
+					</div>
+					<div id="checkboxDiv">
+					<input id="sameForAllCheckbox" type="checkbox" value="">
+					<label style="vertical-align:baseline"  for="sameForAllCheckbox"> Do the same for all migration conflicts
+							</label>
+					</input>
+					</div>
+				</div>
+				<div id="conflictCompareBeautifier">
+					<div id="conflictMetaDataSection" style="display:inline-block; width:100%">					
+						<h2 id="headingCompareMetadata"> Metadata Compare:</h2>
+						<div id="conflictMetaDataTable" class="metaDataTable">
+						</div>	
+					</div>
+					<div  id="conflictCodeSection" style="display:inline-block;">
+						<h2 id="headingCompareContent"> Code Compare: </h2>
+						<div id="settings" class="viewType">
+							<input id="displayMode" style="margin-left:5px" type="submit" value="side by side" onclick="changeDisplayMode()"/>
+							<input id="contextButton" style="margin-left:5px" type="submit" value="show everything" onclick="changeConflictContext()"/>
+							<input id="closeButton" style="margin-left:5px;visibility:hidden" type="submit" value="Close" onclick="closeCompare()"/>
+						</div>
+						<div id="diffoutput">
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
