@@ -1723,7 +1723,7 @@ function addReferencedCodeTemplates(statusCode, referencedCodeTemplates, payload
 	if(referencedCodeTemplates){
 		// add them to the migration list
 		referencedCodeTemplates.forEach(codeTemplate => {
-			console.log('Adding code template with id "'+codeTemplate.id+'": \n'+codeTemplate);
+			// add the code template to the list of components that should be migrated
 			componentToMigrate.set(codeTemplate.id, codeTemplate);
 		});
 		// add the altered component list to the payload
@@ -1931,14 +1931,15 @@ function convertAll(){
 function skipComponent(){
 	// if the "Do the same for all migration conflicts" checkbox is activated
     if($('#sameForAllCheckbox').is(':checked')){
-		
+
 		// cancel the migration for all components
-        for(var component in componentWithConflict){
+		componentWithConflict.forEach((component) => {
 			// indicate that this component has been skipped
-			componentsToSkip.push({'name': componentToMigrate.get(component.id).name, 'id': component.id, 'type': component.type, 'status': 'skipped'});
+			componentsToSkip.push({'name': component.name, 'id': component.id, 'type': component.type, 'status': 'skipped'});
 			// remove the compenent from the migration list
             componentToMigrate.delete(component.id);
-        }
+		});
+		
 		// empty the list of conflicting components
 		componentWithConflict = [];
     } else{
@@ -1946,7 +1947,7 @@ function skipComponent(){
 		// get the current conflicting component
 		var component = componentWithConflict[0];
 		// indicate that this component has been skipped
-		componentsToSkip.push({'name': componentToMigrate.get(component.id).name, 'id': component.id, 'type': component.type, 'status': 'skipped'});
+		componentsToSkip.push({'name': component.name, 'id': component.id, 'type': component.type, 'status': 'skipped'});
 		// remove the compenent from the migration list
 		componentToMigrate.delete(component.id);
 		// and finally remove the component from the conflict list
