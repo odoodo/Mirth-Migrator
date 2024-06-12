@@ -51,11 +51,14 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.XML;
+
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.NativeArray;
@@ -75,7 +78,7 @@ import org.mozilla.javascript.json.JsonParser.ParseException;
  */
 public class MirthMigrator {
 
-	private final static String version = "1.0 beta";
+	private final static String version = "1.0 beta 2";
 
 	/** The identifier or the component type channel */
 	public final static String CHANNEL = "channel";
@@ -353,20 +356,21 @@ public class MirthMigrator {
 	private static Long configurationLoadingDate = null;
 
 	static {
-		/*
-		try {
-			// check if v2.x classes are present
-			Class.forName("org.apache.logging.log4j.core.appender.RollingFileAppender");
-			MirthHttpsClient.logger = LogManager.getLogger(MirthHttpsClient.class.getName());
-		} catch (ClassNotFoundException e) {
-			// nope - so it's still v1.x
-			MirthHttpsClient.logger = Logger.getLogger(MirthHttpsClient.class.getName());
-		}
+
+		MirthMigrator.logger = LoggerFactory.getLogger(MirthMigrator.class.getName());
+		/* usually log level should be set via log4j properties file
+		
+			For log42 properties this would be:
+			===================================
+				log4j.logger.lu.hrs.mirth.migration.MirthMigrator = DEBUG
+			
+			For log4j2 properties this would be:
+			====================================
+				logger.MirthMigrator.name = lu.hrs.mirth.migration.MirthMigrator
+				logger.MirthMigrator.level = DEBUG
 		*/
-		MirthMigrator.logger = Logger.getLogger(MirthMigrator.class.getName());
-		// usually log level should be set via log4j.properties. Add line: log4j.logger.lu.hrs.mirth.migration.MirthMigrator = DEBUG
-		// MirthHttpsClient.logger.setLevel(Level.DEBUG);
 		MirthMigrator.logger.info("Mirth Migrator version " + getVersion() + " activated");
+
 
 
 		// instantiate a JsonParser for transferring JSON-structures to JavaScript
@@ -4225,6 +4229,7 @@ public class MirthMigrator {
 	 *         <li><b>numberOfConflicts</b> - The total of detected conflicts</li>
 	 *         <li><b>component</b> - A list of components that are causing (potential) conflicts:</li>
 	 *         <ul>
+	 *         <li><b>name</b> - The name of the component</li>
 	 *         <li><b>id</b> - The id of the component</li>
 	 *         <li><b>type</b> - The type of the component (<i>channel</i>, <i>codeTemplate</i>, or <i>application</i>)<br/>
 	 *         The type <i>application</i> is artificial and indicates that the source and target system are running under different Mirth
@@ -4291,6 +4296,7 @@ public class MirthMigrator {
 				if (targetComponent != null) {
 					// add it to the conflicts list
 					conflict = new JSONObject();
+					conflict.put("name", getComponentDetails(componentType, componentId, true).getString("Name"));
 					conflict.put("id", componentId);
 					conflict.put("type", componentType);
 
@@ -4912,7 +4918,7 @@ public class MirthMigrator {
 			}
 
 			// check the component version at the target Mirth instance is newer than the one that is about to be migrated
-			if (sourceComponent.has("Display date") && targetComponent.has("Display date")
+			if (sourceComponent.has("Last modified") && targetComponent.has("Last modified")
 					&& (sourceComponent.getLong("Last modified") < targetComponent.getLong("Last modified"))) {
 
 				// target version is newer
