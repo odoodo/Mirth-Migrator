@@ -22,7 +22,8 @@ If a component already exists at the destination instance, conflict handling wil
   <kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd>
 
 <h2>Installation</h2>
-
+Behind each step you can find a screenshot indicating what/where to click and in which order:<br/>
+<br/>
 <table>
   <tr><td><b>1.</b></td><td>Copy the <b>folder "web"</b> to your Mirth installation (to <b>"&lt;Your Install Path&gt;\Mirth Connect"</b>)</td><td><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/bb711974-3afe-4f3e-876b-3a1c5c83f274" width="160"></td></tr>
   <tr><td><b>2.</b></td><td>In Mirth Administrator open the <b>menu item "Settings"</b>, there the <b>tab "Resources"</b> and press <b>"Add Resources"</b></td><td><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/eb1a83c9-0cd3-4b08-b9be-1bc331677fb2" width="160"></td></tr>
