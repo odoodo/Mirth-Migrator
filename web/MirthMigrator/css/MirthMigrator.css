@@ -1,8 +1,27 @@
-table.parameters tr td {
-	border: none !important;
+table.parameters {
+	width: 98%;
 	border-collapse: collapse;
 	vertical-align: top;
 	text-align: left;
+}
+table.parameters td, th {
+	border: none; 
+	padding: 8px;
+	vertical-align: top;
+/*	background-color: white !important;	*/
+}
+table.parameters td:first-child {
+	white-space: nowrap;
+}
+
+table.parameters td:last-child {
+	width: 100%;
+}
+table.parameters tr {
+	border-bottom: 1px solid black; 
+}
+table.parameters tr:last-child {
+	border-bottom: none; 
 }
 
 #flexBoxWrap{
@@ -100,11 +119,11 @@ table.parameters tr td {
 	==========================================================================================
 */
 
-.componentTableLeft{
+#componentTableLeft{
 	vertical-align: top;	
 }
 
-.componentTableRight{
+#componentTableRight{
 	vertical-align: top;	
 }
 
