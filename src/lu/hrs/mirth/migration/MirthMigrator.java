@@ -2322,7 +2322,7 @@ public class MirthMigrator {
 					description = detectedDescription.get(name);
 				}
 				// and add the formatted parameter
-				parameters += String.format("<tr><td><b>%s</b></td><td>%s</td></tr>\n", name, description);
+				parameters += String.format("<tr><td><b>%s</b>\t</td><td>%s</td></tr>\n", name, description);
 			}
 			if (!parameters.isEmpty()) {
 				parameters = "<table class='parameters'>" + parameters + "</table>";
@@ -2616,7 +2616,7 @@ public class MirthMigrator {
 					}
 					// and also extract the change description
 					changeDescription = changesMatcher.group(2).trim();
-					changes.put(parsedDate.getTime(), "<tr><td><b>" + changeDate + "</b> </td><td>" + changeDescription + "</td></tr>");
+					changes.put(parsedDate.getTime(), "<tr><td><b>" + changeDate + "</b>\t</td><td>" + changeDescription + "</td></tr>");
 				}
 
 				// if changes were found
@@ -4943,9 +4943,12 @@ public class MirthMigrator {
 
 			// also add the component source code if present
 			if (sourceComponent.has("content") && targetComponent.has("content")) {
-
-				result.put("sourceContent", sourceComponent.getString("content"));
-				result.put("destinationContent", targetComponent.getString("content"));
+				// add the decoded source component
+				result.put("sourceContent", sourceComponent.getString("content").replaceAll("&apos;", "'").replaceAll("&quot;", "\"")
+				.replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&amp;", "&"));
+				// and destination component source code
+				result.put("destinationContent", targetComponent.getString("content").replaceAll("&apos;", "'").replaceAll("&quot;", "\"")
+				.replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&amp;", "&"));
 			}
 
 			// and also indicate the total number of detected conflicts
