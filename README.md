@@ -22,7 +22,15 @@ If a component already exists at the destination instance, conflict handling wil
   <kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd>
 
 <h2>Installation</h2>
-Behind each step you can find a screenshot indicating what/where to click and in which order:<br/>
+<b>For Mirth experts:</b><br/>
+<table>
+  <tr><td><b>1.</b></td><td>Place the "web" folder in your "Mirth Connect" folder</td></tr>
+  <tr><td><b>2.</b></td><td>Reference MirthMigrator.jar that you find at ./web/MirthMigrator/jar/ as custom resource</td></tr>
+  <tr><td><b>3.</b></td><td>Import the MIRTH_MIGRATOR channel and reference the custom resource</td></tr>
+  <tr><td><b>4.</b></td><td>Configure Mirth Migrator (see configuration section for details)</td></tr>
+</table><br/>
+<b>Detailed step by step instruction:</b><br/>
+Behind each step you can find a screenshot indicating what/where to click and in which order.<br/>
 <br/>
 <table>
   <tr><td><b>1.</b></td><td>Copy the <b>folder "web"</b> to your Mirth installation (to <b>"&lt;Your Install Path&gt;\Mirth Connect"</b>)</td><td><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/bb711974-3afe-4f3e-876b-3a1c5c83f274" width="160"></td></tr>
