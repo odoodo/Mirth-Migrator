@@ -296,7 +296,7 @@ public class MirthMigrator {
 	private final static Pattern channelGroupPattern = Pattern.compile("<channelGroup[\\s\\S]*?<\\/channelGroup>");
 	// get code template library
 	private final static Pattern codeTemplateLibraryPattern = Pattern
-			.compile("<codeTemplateLibrary version=\"[^\"]+\">((?!codeTemplateLibrary)[\\s\\S])*</codeTemplateLibrary>");
+			.compile("<codeTemplateLibrary version=\"[^\"]+\">(?:(?!codeTemplateLibrary)[\\s\\S])*</codeTemplateLibrary>");
 	// get channel group id (group 1):
 	// private final static Pattern groupIdPattern = Pattern.compile("<id>([\\s\\S]*?)<\\/id>");
 	// get channel group name (group 1)
@@ -6441,11 +6441,12 @@ public class MirthMigrator {
 		}
 
 		// remove disabled channel ids
+		targetCodeTemplateLibaries = targetCodeTemplateLibaries.replaceAll("(\\s*)<disabledChannelIds\\/>",
+				"$1<disabledChannelIds>$1<\\/disabledChannelIds>");
 		targetCodeTemplateLibaries = targetCodeTemplateLibaries.replaceAll("(\\s*)<disabledChannelIds[\\s\\S]*?<\\/disabledChannelIds>",
 				"$1<disabledChannelIds>$1</disabledChannelIds>");
 
 		codeTemplateLibraryMatcher = codeTemplateLibraryPattern.matcher(targetCodeTemplateLibaries);
-
 		// now loop over all target system code template libraries
 		while (codeTemplateLibraryMatcher.find()) {
 			// get the code of the code template library
@@ -6458,7 +6459,7 @@ public class MirthMigrator {
 			}
 			// add a mapping for the code template library identified by it's name
 			targetSystemCodeTemplateLibraryMapping.put(codeTemplateLibraryNameMatcher.group(1), targetSystemCodeTemplateLibraryCode);
-
+			logger.debug("Detected template library \""+codeTemplateLibraryNameMatcher.group(1)+"\"");
 			// get the code template library id
 			codeTemplateLibraryIdMatcher = idPattern.matcher(targetSystemCodeTemplateLibraryCode);
 			if (!codeTemplateLibraryIdMatcher.find()) {
@@ -6490,7 +6491,7 @@ public class MirthMigrator {
 				sourceSystemChannelReferences = channelReferencesMatcher.group();
 			}
 
-			// try to get hold of channel references
+			// try to get hold of code template references
 			codeTemplateReferencesMatcher = codeTemplateReferencesPattern.matcher(sourceSystemCodeTemplateLibraryCode);
 
 			// if code template references were found
@@ -6518,9 +6519,9 @@ public class MirthMigrator {
 			for (String codeTemplateId : codeTemplateIds) {
 				// if the code template is referenced by this code template library in the source system
 				if (sourceSystemCodeTemplateReferences.contains(codeTemplateId)) {
-					// if the code template library does not yet exist in the destination system it has to be created as the code template is part of
-					// it
+					// if the code template library does not yet exist in the destination system it has to be created as the code template is part of it
 					if (!targetSystemCodeTemplateLibraryMapping.containsKey(sourceSystemCodeTemplateLibraryName)) {
+						logger.debug("Adding template library \""+sourceSystemCodeTemplateLibraryName+"\" to destination configuration");			
 						// clone the source system code template library but remove the code template references
 						String newCodeTemplateLibrary = sourceSystemCodeTemplateLibraryCode
 								.replaceAll("(\\s*)<codeTemplates[\\s\\S]*?<\\/codeTemplates>", "$1<codeTemplates>$1</codeTemplates>");
@@ -6547,6 +6548,7 @@ public class MirthMigrator {
 									"<id>" + newCodeTemplateLibraryId + "</id>");
 							// and also add it to the code template library id list for including it into future collision detection
 							collisionDetector.add(newCodeTemplateLibraryId);
+							logger.debug("Detected ID collision for library \""+sourceSystemCodeTemplateLibraryName+"\" ==> changed ID to " + newCodeTemplateLibraryId);
 						}
 						// add the new code template library to the code template library list of the target system
 						targetSystemCodeTemplateLibraryMapping.put(sourceSystemCodeTemplateLibraryName, newCodeTemplateLibrary);
@@ -6612,7 +6614,7 @@ public class MirthMigrator {
 		/** 4.) assemble the code template library configuration for the destination system */
 		// create an empty configuration
 		String targetSystemCodeTemplateLibraries = "<list>\n";
-//		String targetSystemCodeTemplateLibraries = "<set>\n";
+
 		// and add all code template libraries
 		for (String codeTemplateLibrary : targetSystemCodeTemplateLibraryMapping.values()) {
 			// add the code template library
@@ -6620,7 +6622,6 @@ public class MirthMigrator {
 		}
 		// finish configuration
 		targetSystemCodeTemplateLibraries += "</list>\n";
-//		targetSystemCodeTemplateLibraries += "</set>\n";
 
 		// only migrate if there is something to migrate
 		if (targetSystemCodeTemplateLibraryMapping.size() > 0) {
@@ -6629,6 +6630,7 @@ public class MirthMigrator {
 			targetSystemCodeTemplateLibraries = convert(targetSystemCodeTemplateLibraries, getMirthVersion(), targetSystem.getMirthVersion());
 			targetSystemCodeTemplateLibraries=targetSystemCodeTemplateLibraries.replaceAll("\\<enabledChannelIds\\>\\s*\\<\\/enabledChannelIds\\>", "<enabledChannelIds/>").replaceAll("\\<disabledChannelIds\\>\\s*\\<\\/disabledChannelIds\\>", "<disabledChannelIds/>");
 			// last but not least actually migrate the altered code template library configuration to the target system
+
 			result = targetSystem.migrateComponent(targetSystemCodeTemplateLibraries);
 			targetCodeTemplateLibaries = targetSystem.getCodeTemplateLibraries();
 		}
