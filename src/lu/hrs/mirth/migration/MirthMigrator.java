@@ -132,6 +132,11 @@ public class MirthMigrator {
 	private static HashMap<String, HashMap<String, String>> mirthEnvironments = null;
 
 	/**
+	 * The Mirth Migrator configuration
+	 */
+	private static JSONObject configuration = null;
+
+	/**
 	 * A list of functions that should not be recognized as custom functions
 	 */
 	private static ArrayList<String> functionFilter = new ArrayList<String>();
@@ -350,7 +355,7 @@ public class MirthMigrator {
 	private static final HashMap<String, HashMap<String, Object>> userSessionCache = new HashMap<String, HashMap<String, Object>>();
 
 	/** Determines the maximum inactivity period of a user session before it will automatically be ended */
-	private static Integer userSessionLifeSpanInMinutes = 5;
+	private static Integer userSessionLifeSpanInMinutes = 1;
 
 	/** The point of time at which the configuration has last been loaded */
 	private static Long configurationLoadingDate = null;
@@ -580,7 +585,7 @@ public class MirthMigrator {
 				logger.debug("Checking session \"" + session.get("sessionCookie") + "\"");
 			}
 			// if the session contains the username and is still valid
-			if (session.get("username").equals(username) && ((long) session.get("lastAccess") >= System.currentTimeMillis() - (getUserSessionLifeSpan() * 60000))) {
+			if (session.get("username").equals(username) && (System.currentTimeMillis() - ((long) session.get("lastAccess")) <= getUserSessionLifeSpan() * 60000)) {
 				// reset the session life
 				session.put("lastAccess", System.currentTimeMillis());
 				String backup = userSessionCookie;
@@ -958,6 +963,9 @@ public class MirthMigrator {
 		}
 		// load the configuration file
 		JSONObject configuration = new JSONObject(new String(Files.readAllBytes(configFile.toPath()), StandardCharsets.UTF_8));
+		// cache the configuration
+		MirthMigrator.configuration = configuration;
+
 
 		/* 1. Parse the environment configuration */
 
@@ -1102,12 +1110,17 @@ public class MirthMigrator {
 		/* 4. check for user session life-span configuration */
 
 		// if a session lifespan was defined
-		if (configuration.has("userSessionLifeSpan")) {
-			int lifeSpan = configuration.getInt("userSessionLifeSpan");
-			if (lifeSpan > 0) {
+		if (configuration.has("sessionLifeSpanInMinutes")) {
+			int lifeSpan = configuration.getInt("sessionLifeSpanInMinutes");
+			if (lifeSpan >= 0) {
 				// update the session lifespan
 				setUserSessionLifeSpan(lifeSpan);
+				logger.debug("Session lifespan has been set to "+getUserSessionLifeSpan()+" minutes");
+			} else {
+				logger.warn("Configured session lifespan of "+lifeSpan+" minutes is invalid. Using default lifespan of "+MirthMigrator.userSessionLifeSpanInMinutes+" minutes");				
 			}
+		} else {
+			logger.warn("Session lifespan was not found in configuration file. Using default lifespan of "+MirthMigrator.userSessionLifeSpanInMinutes+" minutes");
 		}
 
 		/* 5. finally, remember the point of time the configuration has been loaded */
@@ -1270,7 +1283,6 @@ public class MirthMigrator {
 				// and set the changed flag
 				hasChanged = true;
 			}
-
 		} else {
 			// a new session was requested for the user. However it might be that this is just a renewal after a session timeout. This would mean
 			// the client has to be reloaded nevertheless
@@ -5542,25 +5554,8 @@ public class MirthMigrator {
 	 * @return The user session or null if no active session could be found
 	 */
 	public static HashMap<String, Object> getUserSession(String userSessionCookie) {
-		// get the user session
-		HashMap<String, Object> userSession = MirthMigrator.userSessionCache.get(userSessionCookie);
-
-		// if there is a user session
-		if (userSession != null) {
-			// but it is no longer valid
-			if ((long) userSession.get("lastAccess") < System.currentTimeMillis() - (getUserSessionLifeSpan() * 60000)) {
-				// remove it from cache
-				MirthMigrator.userSessionCache.remove(userSessionCookie);
-				// and invalidate the fetched session
-				userSession = null;
-			} else {
-				// expand session life-span
-				userSession.put("lastAccess", System.currentTimeMillis());
-			}
-		}
-
-		// check if there still is a session for the given cookie in the cache
-		return userSession;
+		// if the session is valid, return it
+		return isValidUserSession(userSessionCookie) ? MirthMigrator.userSessionCache.get(userSessionCookie) : null;
 	}
 
 	/**
@@ -5579,12 +5574,14 @@ public class MirthMigrator {
 		// if there is a user session
 		if (userSession != null) {
 			// but it is no longer valid
-			if ((long) userSession.get("lastAccess") < System.currentTimeMillis() - (getUserSessionLifeSpan() * 60000)) {
+			if (System.currentTimeMillis() - ((long) userSession.get("lastAccess")) > getUserSessionLifeSpan() * 60000) {
+				logger.error((System.currentTimeMillis() - ((long) userSession.get("lastAccess")))+" > "+ (getUserSessionLifeSpan() * 60000) +" ==> Session is expired!");
 				// remove it from cache
 				MirthMigrator.userSessionCache.remove(userSessionCookie);
 				// and invalidate the fetched session
 				userSession = null;
 			} else {
+				logger.error((System.currentTimeMillis() - ((long) userSession.get("lastAccess")))+" <= "+ (getUserSessionLifeSpan() * 60000) +" ==> Session is valid");
 				// reset the session life
 				userSession.put("lastAccess", System.currentTimeMillis());
 			}
@@ -5619,7 +5616,7 @@ public class MirthMigrator {
 			Map.Entry<String, HashMap<String, Object>> entry = iterator.next();
 			HashMap<String, Object> session = entry.getValue();
 			// if the life-span of the session has expired
-			if (((long) session.get("lastAccess") < System.currentTimeMillis() - (getUserSessionLifeSpan() * 60000))
+			if ((System.currentTimeMillis() - ((long) session.get("lastAccess")) >  getUserSessionLifeSpan() * 60000)
 					|| ((account != null) && (session.get("username").equals(account)))) {
 				// remove it from cache
 				iterator.remove();
@@ -6423,6 +6420,8 @@ public class MirthMigrator {
 		// harmonize representation
 		targetCodeTemplateLibaries = targetCodeTemplateLibaries.replaceAll("(\\s*)<enabledChannelIds\\/>",
 				"$1<enabledChannelIds>$1<\\/enabledChannelIds>");
+		targetCodeTemplateLibaries = targetCodeTemplateLibaries.replaceAll("(\\s*)<disabledChannelIds\\/>",
+				"$1<disabledChannelIds>$1<\\/disabledChannelIds>");
 		targetCodeTemplateLibaries = targetCodeTemplateLibaries.replaceAll("(\\s*)<codeTemplates\\/>", "$1<codeTemplates>$1<\\/codeTemplates>");
 
 		// remove references to channels that should be migrated
@@ -6441,10 +6440,7 @@ public class MirthMigrator {
 		}
 
 		// remove disabled channel ids
-		targetCodeTemplateLibaries = targetCodeTemplateLibaries.replaceAll("(\\s*)<disabledChannelIds\\/>",
-				"$1<disabledChannelIds>$1<\\/disabledChannelIds>");
-		targetCodeTemplateLibaries = targetCodeTemplateLibaries.replaceAll("(\\s*)<disabledChannelIds[\\s\\S]*?<\\/disabledChannelIds>",
-				"$1<disabledChannelIds>$1</disabledChannelIds>");
+		// targetCodeTemplateLibaries = targetCodeTemplateLibaries.replaceAll("(\\s*)<disabledChannelIds[\\s\\S]*?<\\/disabledChannelIds>", "$1<disabledChannelIds>$1</disabledChannelIds>");
 
 		codeTemplateLibraryMatcher = codeTemplateLibraryPattern.matcher(targetCodeTemplateLibaries);
 		// now loop over all target system code template libraries
