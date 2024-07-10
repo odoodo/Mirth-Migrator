@@ -1792,21 +1792,24 @@ public class MirthMigrator {
 	 */
 	private void forceRefresh() throws ServiceUnavailableException {
 		// empty the configuration of this instance
+		this.channelCodeTemplateLibraryReferences = null;
+		this.channelFunctionReferences = null;
 		this.channelGroupInfo = null;
-		this.codeTemplateLibraryInfo = null;
-		this.codeTemplateInfo = null;
+		this.channelGroupOrder = null;
 		this.channelInfo = null;
+		this.channelInternalFunctions = null;
+		this.channelLastModified = null;
+		this.channelReferencesToFunction = null;
+		this.channelState = null;
+		this.codeTemplateIdToFunction = null;
+		this.codeTemplateIdToLibraryId = null;
+		this.codeTemplateInfo = null;
+		this.codeTemplateLibraryInfo = null;
+		this.codeTemplateLibraryOrder = null;
 		this.codeTemplateNameToId = null;
 		this.functionLinkedByFunctions = null;
-		this.functionUsesFunctions = null;
-		this.channelGroupOrder = null;
-		this.channelFunctionReferences = null;
-		this.channelReferencesToFunction = null;
 		this.functionNameToCodeTemplateId = null;
-		this.channelInternalFunctions = null;
-
-		// create the client for the mirth instance
-		// addClient(getSystemName(), getEnvironment(), getServer(), getPort(), getUsername(), getPassword(), getDescription());
+		this.functionUsesFunctions = null;
 	}
 
 	/**
@@ -2316,7 +2319,7 @@ public class MirthMigrator {
 				}
 				// adjust description
 				parameterDescription = parameterDescription.replaceAll("\\s*(\\r?\\n|\\r)", "\n").replaceAll("(?i)<br?\\/>(\\r?\\n|\\r)", "\n")
-						.replaceAll("(?i)(?<!<(ol|ul|\\/ol|\\/ul|\\/li)>)(\\n)", "<br/>\n");
+						.replaceAll("(?i)(?<!<(ol|ul|tr|td|table\\/ol|\\/ul|\\/li|\\/td|\\/tr|\\/table)>)(\\n)", "<br/>\n");
 				// and add it to the list of detected descriptions
 				detectedDescription.put(parameterName, parameterDescription);
 			}
@@ -5575,13 +5578,11 @@ public class MirthMigrator {
 		if (userSession != null) {
 			// but it is no longer valid
 			if (System.currentTimeMillis() - ((long) userSession.get("lastAccess")) > getUserSessionLifeSpan() * 60000) {
-				logger.error((System.currentTimeMillis() - ((long) userSession.get("lastAccess")))+" > "+ (getUserSessionLifeSpan() * 60000) +" ==> Session is expired!");
 				// remove it from cache
 				MirthMigrator.userSessionCache.remove(userSessionCookie);
 				// and invalidate the fetched session
 				userSession = null;
 			} else {
-				logger.error((System.currentTimeMillis() - ((long) userSession.get("lastAccess")))+" <= "+ (getUserSessionLifeSpan() * 60000) +" ==> Session is valid");
 				// reset the session life
 				userSession.put("lastAccess", System.currentTimeMillis());
 			}
