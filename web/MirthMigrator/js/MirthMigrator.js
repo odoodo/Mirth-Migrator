@@ -277,6 +277,10 @@ function accessResource(command, payload, action, parameters, refreshCache){
 					$("#reloadPopup").css('display','flex');
 
 					return;
+				} else if(statusCode == 422){
+					// there is not yet a configuration file. Thus force configurator to appear
+					loadSettings();
+					return;
 				}
 				
 				$("#errorImage").attr("src", ((statusCode == 503) ? '/img/serverUnavailable.png' : '/img/error.png'));
@@ -335,7 +339,7 @@ function setSystems(statusCode, response){
 	var orderedSystems = new Map();
 	$.each(response, function(index, system) {
 		// add all systems to the map
-		orderedSystems.set(system.environment + '_' + system.name, system);
+		orderedSystems.set(system.environmentOrderId + '_' + system.name, system);
 	})
 	var systemIdentifiers = Array.from(orderedSystems.keys()).sort();
 	
@@ -347,7 +351,7 @@ function setSystems(statusCode, response){
 							system.description + 
 							'" id="' + 
 							system.server +
-							'" environment-color="' +
+							'" color="' +
 							system.color +
 							'" style="background-color:' + 
 							system.color + 
@@ -360,7 +364,7 @@ function setSystems(statusCode, response){
 							system.description + 
 							'" id="' + 
 							system.server + 
-							'" environment-color="' +
+							'" color="' +
 							system.color +
 							'" style="background-color:' + 
 							system.color + 
@@ -373,6 +377,9 @@ function setSystems(statusCode, response){
 	// and set it on the page
 	$("#sourceSystem").replaceWith(systemSelectA);
 	$("#destSystem").replaceWith(systemSelectB);
+	
+	activateSelectionColorChanger($("#sourceSystem"));
+	activateSelectionColorChanger($("#destSystem"));
 }
 
 /**
@@ -481,6 +488,8 @@ $(document).ready(function() {
 	accessResource('/getEnvironments', null, setEnvironments);
 	// and now load the system select boxes
 	accessResource('/getSystems', null, setSystems);
+	
+	activateSelectionColorChanger();
 });
 
 /**
@@ -727,13 +736,41 @@ function compare(statusCode, response){
 }
 
 /**
- * Changes the background color of the selected option.
- * @param {String} systemType Either sourceSystem or destSystem.
+ * Changes the background color of the selected option of a select box
+ * @param {String} selectBox The reference to the select box for which the change should be applied
  */
-function changeSelectionColor(systemType){
-	var selected = document.getElementById(systemType);
-	var color = selected.options[selected.selectedIndex].className;
-	$("#" + systemType).attr("class", color);
+function changeSelectionColor(selectBox){
+	// get the color of the selected option
+    var color = $(selectBox).find("option:selected").attr("color");
+	// if there was a color configured use it. Otherwise use white (just to be sure)
+	$(selectBox).css('background-color', color ? color : '#ffffff'); 
+}
+
+/**
+ * Changes the background color of the selected option of a select box
+ * @param {String} selectBox The reference to the select box for which the change should be applied. If none is provided, it will be applied to all select boxes
+ */
+function activateSelectionColorChanger(selectBox){
+	if(selectBox){
+		// adapt the color to the current selection
+		changeSelectionColor(selectBox);
+		
+		// and also at change events
+		$(selectBox).off('change').on('change', function() {
+			changeSelectionColor(selectBox); 
+		});		
+	}else{
+		// for all select boxes
+		$('select').each(function() {
+			// adapt the color to the current selection
+			changeSelectionColor(this);
+			
+			// and also at change events
+			$(this).off('change').on('change', function() {
+				changeSelectionColor(this); 
+			});
+		});
+	}
 }
 
 /**
@@ -741,8 +778,7 @@ function changeSelectionColor(systemType){
  * @param {String} systemType Either sourceSystem or destSystem.
  */
 function changeTableBorderColor(systemType){
-    var selected = document.getElementById(systemType);
-    var color = selected.options[selected.selectedIndex].className;
+	var color = $("#" + systemType).find("option:selected").attr("color");
     if(systemType=="sourceSystem") document.getElementById("tableSource").style.border = "thick solid " + color;
     else document.getElementById("tableDest").style.border = "thick solid " + color;
 }
@@ -785,16 +821,17 @@ function setSelectionHeaders(systemType, displayList)
 	}
 		
 	// assgemble the status message
-    var displayString = system + ": " + 
-						displayList["Number of groups"] + " " + 
-						groupType + ', ' + displayList['Number of members'] + " " + 
-						componentType + " (Mirth v" + displayList['Mirth version'] + ")" ;
+    var displayString = system + ': ' + 
+						displayList['Number of groups'] + ' ' + 
+						((displayList['Number of groups'] != 1) ? groupType : groupType.substring(0, groupType.length - 1)) + ', ' + 
+						displayList['Number of members'] + ' ' + 
+						((displayList['Number of members'] != 1) ? componentType : componentType.substring(0, componentType.length - 1)) + ' (Mirth v' + displayList['Mirth version'] + ')' ;
 
    $('#' + systemType + "Header").text(displayString);
 }
 
 /**
- * This function takes the table id as parameter and afterwards initiates the ajax call to cocoon.
+ * This function takes the table id as parameter and afterwards initiates the ajax call.
  * Once the ajax call returns, inside the response event the functions to update the table are called.
  * @param {*} systemType
  * @param {*} refreshCache If set, the component metadata at server-side will be reloaded
@@ -804,7 +841,7 @@ function populateTable(statusCode, displayList, parameters){
 		var table = '';
 		var isSource = (parameters.systemType == 'sourceSystem');
 		// determine the environment color
-		var color = $('#' + parameters.systemType + ' option:selected').attr('environment-color');
+		var color = $('#' + parameters.systemType + ' option:selected').attr('color');
 		// and adjust the border color of the div hosting the table
 		$(isSource ? '#tableSource' : '#tableDest').css('border', 'thick solid ' + color);
 
@@ -864,9 +901,9 @@ function populateTable(statusCode, displayList, parameters){
 		
 		//do not display checkbox for avoiding to migrate refrenced code templates before anything has been clicked
 		if(isSource){
-			$("#omitReferencedCodeTemplatesDivLeft").css('display','none');
+			$("#migrateReferencedCodeTemplatesCheckboxDivLeft").css('display','none');
 		}else{
-			$("#omitReferencedCodeTemplatesDivRight").css('display','none');
+			$("#migrateReferencedCodeTemplatesCheckboxDivRight").css('display','none');
 		}
 			
 
@@ -979,12 +1016,12 @@ function adjustAvoidReferencedTemplatesOption(isLeftTable){
 	// in case of channels
 	if(isChannel){
 		// only display the option at the mirth instance from which should be migrated
-		$("#omitReferencedCodeTemplatesDivLeft").css('display', isLeftTable ? 'block' : 'none');
-		$("#omitReferencedCodeTemplatesDivRight").css('display', isLeftTable ? 'none' : 'block');		
+		$("#migrateReferencedCodeTemplatesCheckboxDivLeft").css('display', isLeftTable ? 'block' : 'none');
+		$("#migrateReferencedCodeTemplatesCheckboxDivRight").css('display', isLeftTable ? 'none' : 'block');		
 	} else{
 		// in case of code templates the option should not (yet) be available
-		$("#omitReferencedCodeTemplatesDivLeft").css('display','none');
-		$("#omitReferencedCodeTemplatesDivRight").css('display','none');
+		$("#migrateReferencedCodeTemplatesCheckboxDivLeft").css('display','none');
+		$("#migrateReferencedCodeTemplatesCheckboxDivRight").css('display','none');
 	}
 }
 
@@ -1700,7 +1737,7 @@ function checkSelectedComponents(){
 		};
 
 		// if referenced code templates should be migrated w/ the channels
-		if(payload.component[0].type.includes('channel') && !$('#omitReferencedCodeTemplatesCheckboxLeft').prop('checked')){
+		if(payload.component[0].type.includes('channel') && $('#migrateReferencedCodeTemplatesCheckboxLeft').prop('checked')){
 			// obtain the referenced code templates before checking the components for possible migration conflicts
 			accessResource('/getReferencedCodeTemplates', payload, addReferencedCodeTemplates, payload);			
 		}else{
@@ -2059,7 +2096,7 @@ function handleMigrationConflict(statusCode, response){
         refreshConflictTable(response.name, response.type, errors); 
 		// Compare meta data of both versions of the conflicting component
         createConflictMetaDataTable(response.metaData);
-
+//xxx
 		// show diff of component content
         updateDiff(response.sourceContent, response.destinationContent, 1);
 		$("#conflictCompareBeautifier").css('height', '70%')
@@ -2148,8 +2185,12 @@ function updateDiff(source, destination, scope) {
 	// in order to yield the new text
 	var opcodes = sm.get_opcodes();
 	var diffoutputdiv = document.getElementById("diffoutput");
+	
 	// remove any preexisting content from the div panel (remains from the last div)
-	while (diffoutputdiv.firstChild) diffoutputdiv.removeChild(diffoutputdiv.firstChild);
+	while (diffoutputdiv.firstChild){
+		diffoutputdiv.removeChild(diffoutputdiv.firstChild);
+	}
+	
 	if((opcodes.length == 1)&&(opcodes[0][0] == 'equal')){
 		// no diff, no buttons needed
 		$('#displayMode').css('display','none');
@@ -2252,11 +2293,12 @@ function capitalizeFirstLetter(string) {
  * Refreshes the tables and deactivates the metadatatable as well as the content display section.
  */
 function refresh(){
-    document.getElementById("collapseContentIcon").style.visibility = "hidden";    
-    document.getElementById("preComponentContent").style.visibility = "hidden";
-    document.getElementById("contentHeader").style.visibility = "hidden";
-    document.getElementById('metaDataSection').style.visibility = "hidden";
-    document.getElementById('collapseMetaDataIcon').style.visibility = "hidden";
+	$("#collapseContentIcon").css("visibility", "hidden");
+	$("#preComponentContent").css("visibility", "hidden");
+	$("#contentHeader").css("visibility", "hidden");
+	$("#metaDataSection").css("visibility", "hidden");
+	$("#collapseMetaDataIcon").css("visibility", "hidden");
+
 	// refresh table content
     populateComponentTables(true);
 }
@@ -2269,7 +2311,7 @@ function closeCompare(){
     $("#overlay").css('display','none');
     $("#componentVersionConflict").css('display','none');
     $("#conflictDiv").css('display','none');
-    document.getElementById("closeButton").style.visibility = "hidden";
+    $("#closeButton").css("visibility", "hidden");
     $("#migrationMainWindow").css('display','block');
 	$("#" + (isLeftToRight() ? "source" : "dest") + "Components tr.highlight").focus();
 }
@@ -2335,5 +2377,4 @@ function encrypt(text) {
     }
     return encrypted;
 }
-
 
