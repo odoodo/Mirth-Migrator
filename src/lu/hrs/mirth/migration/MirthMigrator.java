@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.KeyManagementException;
 import java.security.MessageDigest;
@@ -51,21 +52,21 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.XML;
-
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.NativeArray;
+import org.mozilla.javascript.NativeJSON;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.json.JsonParser;
 import org.mozilla.javascript.json.JsonParser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provides the API that allows the Mirth Migrator to communicate w/ the configured Mirth instances
@@ -78,7 +79,7 @@ import org.mozilla.javascript.json.JsonParser.ParseException;
  */
 public class MirthMigrator {
 
-	private final static String version = "1.0 beta 2";
+	private final static String version = "1.0 beta 3";
 
 	/** The identifier or the component type channel */
 	public final static String CHANNEL = "channel";
@@ -352,7 +353,7 @@ public class MirthMigrator {
 	private TreeMap<String, String> codeTemplateLibraryOrder = null;
 
 	// stores user sessions
-	private static final HashMap<String, HashMap<String, Object>> userSessionCache = new HashMap<String, HashMap<String, Object>>();
+	private static final Map<String, HashMap<String, Object>> userSessionCache = Collections.synchronizedMap(new HashMap<String, HashMap<String, Object>>());
 
 	/** Determines the maximum inactivity period of a user session before it will automatically be ended */
 	private static Integer userSessionLifeSpanInMinutes = 1;
@@ -575,30 +576,31 @@ public class MirthMigrator {
 			logout(userSessionCookie, serverPort, serverName);
 		}
 
-
-		// check if there is still an active session in the cache. This avoids double session timeout in case of concurrent ajax requests
-		Iterator<Map.Entry<String, HashMap<String, Object>>> iterator = MirthMigrator.userSessionCache.entrySet().iterator();
-		while (iterator.hasNext()) {
-			// check next session
-			HashMap<String, Object> session = iterator.next().getValue();
-			if (logger.isDebugEnabled()) {
-				logger.debug("Checking session \"" + session.get("sessionCookie") + "\"");
-			}
-			// if the session contains the username and is still valid
-			if (session.get("username").equals(username) && (System.currentTimeMillis() - ((long) session.get("lastAccess")) <= getUserSessionLifeSpan() * 60000)) {
-				// reset the session life
-				session.put("lastAccess", System.currentTimeMillis());
-				String backup = userSessionCookie;
-				// and reuse this session
-				userSessionCookie = (String) session.get("sessionCookie");
+		synchronized (MirthMigrator.userSessionCache) {
+			// check if there is still an active session in the cache. This avoids double session timeout in case of concurrent ajax requests
+			Iterator<Map.Entry<String, HashMap<String, Object>>> iterator = MirthMigrator.userSessionCache.entrySet().iterator();
+			while (iterator.hasNext()) {
+				// check next session
+				HashMap<String, Object> session = iterator.next().getValue();
 				if (logger.isDebugEnabled()) {
-					logger.debug("Recycled session \"" + userSessionCookie + "\". New session \"" + backup + "\" will be discarded");
+					logger.debug("Checking session \"" + session.get("sessionCookie") + "\"");
 				}
-				// work is done
-				break;
+				// if the session contains the username and is still valid
+				if ((session.get("sessionCookie") != null) && session.get("username").equals(username)
+						&& (System.currentTimeMillis() - ((long) session.get("lastAccess")) <= getUserSessionLifeSpan() * 60000)) {
+					// reset the session life
+					session.put("lastAccess", System.currentTimeMillis());
+					String backup = userSessionCookie;
+					// and reuse this session
+					userSessionCookie = (String) session.get("sessionCookie");
+					if (logger.isDebugEnabled()) {
+						logger.debug("Recycled session \"" + userSessionCookie + "\". New session \"" + backup + "\" will be discarded");
+					}
+					// work is done
+					break;
+				}
 			}
 		}
-		
 		// store the session cookie (and assure that any pre-existing session of the very user is terminated)
 		setUserSession(username, userSessionCookie, true);
 		
@@ -958,9 +960,11 @@ public class MirthMigrator {
 		File configFile = new File(configurationFileLocation);
 		// check if there is a configuration file
 		if (!configFile.exists()) {
-			// and indicate if this is not the case
+		
+			// finally indicate that configuration is needed before anything else can be done
 			throw new ConfigurationException("The Mirth Migrator configuration file \"" + configFile.getAbsolutePath() + "\" is missing.");
 		}
+		
 		// load the configuration file
 		JSONObject configuration = new JSONObject(new String(Files.readAllBytes(configFile.toPath()), StandardCharsets.UTF_8));
 		// cache the configuration
@@ -989,7 +993,7 @@ public class MirthMigrator {
 				logger.error("SKIPPING: The Mirth Migrator configuration contains a integration environment definition without id: \n" + environment);
 				continue;
 			}
-			environmentId = environment.getInt("id") + "";
+			environmentId = environment.getString("id");
 
 			if (!environment.has("position")) {
 				logger.error("SKIPPING: The Mirth Migrator configuration contains a integration environment definition without position id: \n"
@@ -1060,7 +1064,7 @@ public class MirthMigrator {
 				continue;
 			}
 
-			environment = system.getInt("environment") + "";
+			environment = system.getString("environment");
 
 			if (!hasEnvironment(environment)) {
 				logger.error("SKIPPING: The configuration for the system \"" + systemName + "\" references a Mirth environment called \"" + environment
@@ -1587,10 +1591,15 @@ public class MirthMigrator {
 						for (Object member : groupMembers) {
 							// get the reference to the channel
 							String reference = ((JSONObject) member).getString("id");
-							// and add it to the ordered map with its name as key
-							groupMemberOrder.put(getChannelInfo().get(reference).getString("Display name").toLowerCase(), reference);
-							// remember that this channel has been assigned to a group
-							assignedChannels.add(reference);
+							// if the referenced channel actually exists
+							if (getChannelInfo().containsKey(reference)) {
+								// add it to the ordered map with its name as key
+								groupMemberOrder.put(getChannelInfo().get(reference).getString("Display name").toLowerCase(), reference);
+								// remember that this channel has been assigned to a group
+								assignedChannels.add(reference);
+							} else {
+								logger.error("The channel group \""+currentGroup.getString("name")+"\" references a channel with id \""+reference+"\" that does not exist.");
+							}
 						}
 
 						// add information about the number of channels in this group
@@ -3039,6 +3048,7 @@ public class MirthMigrator {
 				// add the id
 				entry.put("name", system.getSystemName());
 				entry.put("environment", system.getEnvironment());
+				entry.put("environmentOrderId", MirthMigrator.getEnvironment(system.getEnvironment()).get("position"));
 				entry.put("color", getEnvironment(system.getEnvironment()).get("color"));
 				entry.put("description", system.getDescription());
 				entry.put("server", system.getServer());
@@ -3059,6 +3069,82 @@ public class MirthMigrator {
 		return createReturnValue(200, result);
 	}
 
+	/**
+	 * Provides the Mirth Migrator configuration.
+	 * 
+	 * @return The Mirth Migrator configuration. If there is not yet a configuration file, or if the configuration is not accessible or corrupt, it
+	 *         provides the default configuration template.
+	 */
+	public static NativeObject getConfiguration() {
+		JSONObject configuration = MirthMigrator.configuration;
+
+		// if the configuration file has not yet been loaded
+		if (configuration == null) {
+			try {
+				// try to load it
+				loadConfiguration();
+				configuration = MirthMigrator.configuration;
+			} catch (ServiceUnavailableException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (Exception e) {
+				// If it was not found or could not be loaded, use the default configuration template from the jar
+				InputStream configurationTemplate = MirthMigrator.class.getClassLoader().getResourceAsStream("ConfigurationTemplate");
+	            if (configurationTemplate == null) {
+	                throw new IllegalArgumentException("Unable to find the ConfigurationTemplate resource in the jar (root location is \""+MirthMigrator.class.getClassLoader().getResource("")+"\")");
+	            }
+				try {
+					// and create a JSOn object from the template
+					configuration = new JSONObject(IOUtils.toString(configurationTemplate, "UTF-8"));
+					logger.warn("There is not yet a configuration, loading default configuration template");
+				} catch (Exception e1) {
+					logger.error("We got an Oooopsi!");
+					e1.printStackTrace();
+				} finally {
+					// assure that resources are freed
+					try{configurationTemplate.close();}catch(Exception ex) {}
+				}
+			}
+		}
+		
+		// return the configuration
+		return createReturnValue(200, configuration);
+	}
+	
+	/**
+	 * Writes the configuration file
+	 * @param configuration The Mirth Migrator configuration to which the configuration file should be updated
+	 */
+	public static NativeObject setConfiguration(NativeObject configuration) {
+		boolean success = true;
+
+		Context context = Context.enter();
+		try {
+			// Convert the JavaScript object to a JSON string
+			String config = Context.toString(NativeJSON.stringify(context, context.initStandardObjects(), configuration, null, null));
+
+			try {
+				// get the path to which the configuration file is written
+				Path configLocation = Paths.get(configurationFileLocation);
+				// make sure that the intended path actually exists
+				Files.createDirectories(configLocation.getParent());
+				// and write the configuration to file
+				Files.write(configLocation, config.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+				
+				logger.debug("Successfully wrote configuration to \"" + configLocation.toAbsolutePath() + "\"");
+				System.out.println("Successfully wrote configuration to \"" + configLocation.toAbsolutePath() + "\"");
+			} catch (IOException e) {
+				success = false;
+				e.printStackTrace();
+			}
+		} finally {
+			// Exit from the context
+			Context.exit();
+		}
+
+		return createReturnValue(200, null);
+	}
+	
 	/**
 	 * Provides the metadata and source code of a specific component
 	 * 
@@ -5145,9 +5231,8 @@ public class MirthMigrator {
 			// this usually means no valid session and is e.g. the case if the service had been restarted
 			if (responseCode == 401) {
 				String message = "Response stream is not available - re-login is needed (" + connection.getResponseCode() + ")";
-				connection.disconnect();
+				connection.disconnect();		
 				logger.error(message);
-
 				result.put("responseCode", 400);
 				result.put("successful", false);
 				result.put("responseMessage", message);
@@ -5234,6 +5319,8 @@ public class MirthMigrator {
 				restService = connectToRestService(serviceUrl);
 				// try to re-execute the query
 				response = getResponseAsXml(restService, getServerSessionCookie());
+				// all caches need to be refilled as current state of the server is unknown
+				forceRefresh();
 			}
 		}
 
@@ -5301,6 +5388,8 @@ public class MirthMigrator {
 				restService = connectToRestService(restService.getURL().getPath());
 				// try to re-execute the query
 				response = getResponseAsJson(restService, getServerSessionCookie());
+				// all caches need to be refilled as current state of the server is unknown
+				forceRefresh();
 			} else {
 				logger.error("Re-login to \"" + restService.getURL().getHost() + ":" + restService.getURL().getPort() + "\"was not successful");
 			}
@@ -5578,8 +5667,10 @@ public class MirthMigrator {
 		if (userSession != null) {
 			// but it is no longer valid
 			if (System.currentTimeMillis() - ((long) userSession.get("lastAccess")) > getUserSessionLifeSpan() * 60000) {
-				// remove it from cache
-				MirthMigrator.userSessionCache.remove(userSessionCookie);
+				synchronized (MirthMigrator.userSessionCache) {
+					// remove it from cache
+					MirthMigrator.userSessionCache.remove(userSessionCookie);
+				}
 				// and invalidate the fetched session
 				userSession = null;
 			} else {
@@ -5610,17 +5701,19 @@ public class MirthMigrator {
 	 */
 	private static void cleanupUserSessions(String account) {
 
-		// check all sessions in session cache
-		Iterator<Map.Entry<String, HashMap<String, Object>>> iterator = MirthMigrator.userSessionCache.entrySet().iterator();
-		while (iterator.hasNext()) {
-			// treat next session
-			Map.Entry<String, HashMap<String, Object>> entry = iterator.next();
-			HashMap<String, Object> session = entry.getValue();
-			// if the life-span of the session has expired
-			if ((System.currentTimeMillis() - ((long) session.get("lastAccess")) >  getUserSessionLifeSpan() * 60000)
-					|| ((account != null) && (session.get("username").equals(account)))) {
-				// remove it from cache
-				iterator.remove();
+		synchronized (MirthMigrator.userSessionCache) {
+			// check all sessions in session cache
+			Iterator<Map.Entry<String, HashMap<String, Object>>> iterator = MirthMigrator.userSessionCache.entrySet().iterator();
+			while (iterator.hasNext()) {
+				// treat next session
+				Map.Entry<String, HashMap<String, Object>> entry = iterator.next();
+				HashMap<String, Object> session = entry.getValue();
+				// if the life-span of the session has expired
+				if ((System.currentTimeMillis() - ((long) session.get("lastAccess")) > getUserSessionLifeSpan() * 60000)
+						|| ((account != null) && (session.get("username").equals(account)))) {
+					// remove it from cache
+					iterator.remove();
+				}
 			}
 		}
 	}
@@ -6030,7 +6123,7 @@ public class MirthMigrator {
 	 */
 	private JSONObject updateChannels(MirthMigrator targetSystem, String[] channelIds) throws ServiceUnavailableException {
 		JSONObject overallResult, result;
-		String channel;
+		String sourceChannel;
 
 		overallResult = new JSONObject();
 		overallResult.put("success", new JSONArray());
@@ -6038,12 +6131,14 @@ public class MirthMigrator {
 
 		// for all channels that should be migrated
 		for (String channelId : channelIds) {
+
 			// fetch the actual code of the channel that should be migrated from the source system
-			channel = getChannel(channelId);
+			sourceChannel = getChannel(channelId);
+
 			// convert the format of the channel to the format of the target system
-			channel = convert(channel, getMirthVersion(), targetSystem.getMirthVersion());
+			sourceChannel = convert(sourceChannel, getMirthVersion(), targetSystem.getMirthVersion());
 			// send the updated channel to the target system
-			result = targetSystem.migrateComponent(channel);
+			result = targetSystem.migrateComponent(sourceChannel);
 			// check if migration worked like intended
 			boolean success = result.getBoolean("success");
 			// add the channel name as attribute
@@ -6191,11 +6286,7 @@ public class MirthMigrator {
 		result.put("newComponents", new JSONArray());
 		result.put("success", false);
 
-		if (channelIds == null) {
-			channelIds = new String[0];
-		}
-
-		if (channelIds.length == 0) {
+		if ((channelIds == null) || (channelIds.length == 0)) {
 			return result;
 		}
 
@@ -6276,6 +6367,7 @@ public class MirthMigrator {
 
 			// check for each channel if it is referenced by this channel group
 			for (String channelId : channelIds) {
+		
 				// if the channel is referenced by this channel group in the source system the same channel group must exist in the target system and
 				// reference the channel
 				if (sourceSystemChannelReferences.contains(channelId)) {
@@ -7560,5 +7652,15 @@ public class MirthMigrator {
 		result.put("type", componentType);
 
 		return result;
+	}
+	
+	public static void main(String[] args) throws Exception {
+		//System.out.println("Writing configuration:");
+
+	//	boolean result = setConfiguration(getConfiguration());
+
+		// Output the stringified JSON
+	//	System.out.println("Writing configuration file " + (result ? "was successful." : "has failed"));
+
 	}
 }
