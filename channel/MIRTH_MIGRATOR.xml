@@ -7,9 +7,9 @@
 Please check https://github.com/odoodo/Mirth-Migrator for further details.&#xd;
 &#xd;
 Version:&#xd;
-&#xd;
+20240822: added support for configuration frontend&#xd;
 20240521: initial version</description>
-  <revision>388</revision>
+  <revision>407</revision>
   <sourceConnector version="3.7.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -130,7 +130,9 @@ Version:&#xd;
           <name>Determine REST service</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
-          <script>switch (sourceMap.get(&apos;contextPath&apos;) + &apos;&apos;) {
+          <script>var ignoreConfigurationException = false;
+
+switch (sourceMap.get(&apos;contextPath&apos;) + &apos;&apos;) {
 	case &apos;/getComponentMetaData&apos;:
 		destination = 1;
 		break;
@@ -160,15 +162,18 @@ Version:&#xd;
 		break;
 	case &apos;/getConfiguration&apos;:
 		destination = 10;
+		ignoreConfigurationException = true;
 		break;
 	case &apos;/setConfiguration&apos;:
 		destination = 11;
+		ignoreConfigurationException = true;
 		break;
 	case &apos;/getReferencedCodeTemplates&apos;:
 		destination = 12;
 		break;
 	case &apos;/getVersion&apos;:
 		destination = 13;
+		ignoreConfigurationException = true;
 		break;
 	default:
 		channelMap.put(&apos;reason&apos;, &apos;unsupported command&apos;);
@@ -176,6 +181,7 @@ Version:&#xd;
 }
 
 destinationSet.removeAllExcept(destination);
+channelMap.put(&apos;ignoreConfigurationException&apos;, ignoreConfigurationException);
 
 return true;</script>
         </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
@@ -184,8 +190,9 @@ return true;</script>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
           <operator>AND</operator>
-          <script>const client = Packages.lu.hrs.mirth.migration.MirthMigrator;
-response = {};
+          <script>response = {};
+const client = Packages.lu.hrs.mirth.migration.MirthMigrator;
+var ignoreConfigurationException = channelMap.get(&apos;ignoreConfigurationException&apos;) == true;
 
 // access headers
 var headers = sourceMap.get(&apos;headers&apos;);
@@ -196,9 +203,26 @@ var responseStatusCode = 200;
 
 if(headers.contains(&apos;sessionId&apos;) &amp;&amp; headers.getHeader(&apos;sessionId&apos;).trim()){
 	var sessionId = headers.getHeader(&apos;sessionId&apos;);
+	var configurationChanged = false;
+	
+	try {
+		// determine configuration change state
+		configurationChanged = client.hasConfigurationChanged(sessionId);  
+	} catch (configurationException) {
+		// there is not yet a valid configuration file, indicate it to the user 
+		// if the requested service does not concern configuration handling
+		if(!ignoreConfigurationException &amp;&amp; (sessionId.indexOf(&apos;JSESSIONID&apos;) == 0)){
+			// indicate that there is not yet a valid configuration (Unprocessable Content)
+			channelMap.put(&apos;responseStatusCode&apos;, &apos;422&apos;);
+			response.message = &apos;No configuration file&apos;;
+			responseMap.put(&apos;response&apos;, JSON.stringify(response));
+
+			return false;
+		}
+	}
 	
 	// check if the configuration changed
-	if(client.hasConfigurationChanged(sessionId)){
+	if(configurationChanged){
 		responseStatusCode = 409;
 		response.message = &apos;Configuration changed&apos;;
 		
@@ -1179,11 +1203,29 @@ responseMap.put(&apos;response&apos;, JSON.stringify(systems.payload));</script>
           <reattachAttachments>true</reattachAttachments>
         </destinationConnectorProperties>
         <script>/**
-ToDo: Not yet implemented
+provided the Mirth Migrator configuration. 
+
+If there is not yet a configuration file or if the configuration is not acessible, 
+a default configuration is provided.
 */</script>
       </properties>
       <transformer version="3.7.1">
-        <elements/>
+        <elements>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="3.7.1">
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>const MirthMigrator = Packages.lu.hrs.mirth.migration.MirthMigrator;
+
+//get the Mirth Migrator configuration
+var configuration = MirthMigrator.getConfiguration();
+
+// set the status code
+channelMap.put(&apos;responseStatusCode&apos;, configuration.statusCode);
+
+// and send the configuration back to the client
+responseMap.put(&apos;response&apos;, JSON.stringify(configuration.payload));</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        </elements>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>JSON</inboundDataType>
@@ -1256,11 +1298,29 @@ ToDo: Not yet implemented
           <reattachAttachments>true</reattachAttachments>
         </destinationConnectorProperties>
         <script>/**
-ToDo: Not yet implemented
+Stores the created or updated configuration file
 */</script>
       </properties>
       <transformer version="3.7.1">
-        <elements/>
+        <elements>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="3.7.1">
+            <name>Save the configuration file</name>
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>const MirthMigrator = Packages.lu.hrs.mirth.migration.MirthMigrator;
+
+//get the Mirth Migrator configuration
+var configuration = MirthMigrator.setConfiguration(msg);
+
+// set the status code
+channelMap.put(&apos;responseStatusCode&apos;, configuration.statusCode);
+
+// and send the configuration back to the client
+responseMap.put(&apos;response&apos;, &apos;{}&apos;);</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        </elements>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>JSON</inboundDataType>
         <outboundDataType>JSON</outboundDataType>
         <inboundProperties class="com.mirth.connect.plugins.datatypes.json.JSONDataTypeProperties" version="3.7.1">
@@ -1490,8 +1550,7 @@ responseMap.put(&apos;response&apos;, JSON.stringify({&apos;version&apos;: versi
       <waitForPrevious>true</waitForPrevious>
     </connector>
   </destinationConnectors>
-  <preprocessingScript>
-return message;</preprocessingScript>
+  <preprocessingScript>return message || {};</preprocessingScript>
   <postprocessingScript>return;</postprocessingScript>
   <deployScript>// get Mirth Migrator version
 var mirthMigratorVersion = Packages.lu.hrs.mirth.migration.MirthMigrator.getVersion();
@@ -1505,7 +1564,7 @@ return;</deployScript>
 return;</undeployScript>
   <properties version="3.7.1">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
-    <messageStorageMode>RAW</messageStorageMode>
+    <messageStorageMode>PRODUCTION</messageStorageMode>
     <encryptData>false</encryptData>
     <removeContentOnCompletion>false</removeContentOnCompletion>
     <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
@@ -1543,7 +1602,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1717896850180</time>
+        <time>1724339118728</time>
         <timezone>Europe/Berlin</timezone>
       </lastModified>
       <pruningSettings>
