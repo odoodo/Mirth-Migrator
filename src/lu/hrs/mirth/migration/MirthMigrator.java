@@ -79,7 +79,7 @@ import org.slf4j.LoggerFactory;
  */
 public class MirthMigrator {
 
-	private final static String version = "1.0 beta 3";
+	private final static String version = "1.0 beta 4";
 
 	/** The identifier or the component type channel */
 	public final static String CHANNEL = "channel";
