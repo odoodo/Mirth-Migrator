@@ -9,7 +9,7 @@ Please check https://github.com/odoodo/Mirth-Migrator for further details.&#xd;
 Version:&#xd;
 20240822: added support for configuration frontend&#xd;
 20240521: initial version</description>
-  <revision>407</revision>
+  <revision>414</revision>
   <sourceConnector version="3.7.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -213,7 +213,7 @@ if(headers.contains(&apos;sessionId&apos;) &amp;&amp; headers.getHeader(&apos;se
 		// if the requested service does not concern configuration handling
 		if(!ignoreConfigurationException &amp;&amp; (sessionId.indexOf(&apos;JSESSIONID&apos;) == 0)){
 			// indicate that there is not yet a valid configuration (Unprocessable Content)
-			channelMap.put(&apos;responseStatusCode&apos;, &apos;422&apos;);
+			channelMap.put(&apos;responseStatusCode&apos;, &apos;500&apos;);
 			response.message = &apos;No configuration file&apos;;
 			responseMap.put(&apos;response&apos;, JSON.stringify(response));
 
@@ -261,9 +261,11 @@ channelMap.put(&apos;responseStatusCode&apos;, responseStatusCode + &apos;&apos;
 
 // in case of error, 
 if(responseStatusCode &gt; 399){
-	// remove the session id from the response
-	channelMap.put(&apos;sessionId&apos;, &apos;&apos;);
-
+	if(responseStatusCode != 500){
+		// remove the session id from the response
+		channelMap.put(&apos;sessionId&apos;, &apos;&apos;);
+	}
+	
 	// set the response
 	responseMap.put(&apos;response&apos;, JSON.stringify(response));
 
@@ -1031,7 +1033,7 @@ Configuration can be changed at
 var environments = MirthMigrator.getEnvironments();
 
 // set the status code
-channelMap.put(&apos;responseStatusCode&apos;, environments.statusCode);
+channelMap.put(&apos;responseStatusCode&apos;, String(environments.statusCode));
 
 // and send the list of environments back to the client
 responseMap.put(&apos;response&apos;, JSON.stringify(environments.payload));</script>
@@ -1125,7 +1127,7 @@ Provides a list of configured Mirth systems. Configuration can be changed at
 var systems = MirthMigrator.getSystems();
 
 // set the status code
-channelMap.put(&apos;responseStatusCode&apos;, systems.statusCode);
+channelMap.put(&apos;responseStatusCode&apos;, String(systems.statusCode));
 
 // and send the list of systems back to the client
 responseMap.put(&apos;response&apos;, JSON.stringify(systems.payload));</script>
@@ -1602,7 +1604,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1724339118728</time>
+        <time>1724660523352</time>
         <timezone>Europe/Berlin</timezone>
       </lastModified>
       <pruningSettings>
