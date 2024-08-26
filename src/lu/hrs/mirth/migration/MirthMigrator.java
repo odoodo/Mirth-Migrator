@@ -356,7 +356,7 @@ public class MirthMigrator {
 	private static final Map<String, HashMap<String, Object>> userSessionCache = Collections.synchronizedMap(new HashMap<String, HashMap<String, Object>>());
 
 	/** Determines the maximum inactivity period of a user session before it will automatically be ended */
-	private static Integer userSessionLifeSpanInMinutes = 1;
+	private static Integer userSessionLifeSpanInMinutes = 20;
 
 	/** The point of time at which the configuration has last been loaded */
 	private static Long configurationLoadingDate = null;
@@ -3006,6 +3006,7 @@ public class MirthMigrator {
 				// and add the environment to the list
 				result.put(entry);
 			}
+			logger.info("getEnvironments() passed - but should be 500");
 		} catch (IOException e) {
 			return createReturnValue(500, "Unable to load configuration: \n" + e.getMessage());
 		} catch (ConfigurationException e) {
@@ -3087,7 +3088,7 @@ public class MirthMigrator {
 			} catch (ServiceUnavailableException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (Exception e) {
+			} catch (ConfigurationException e) {
 				// If it was not found or could not be loaded, use the default configuration template from the jar
 				InputStream configurationTemplate = MirthMigrator.class.getClassLoader().getResourceAsStream("ConfigurationTemplate");
 	            if (configurationTemplate == null) {
@@ -3098,12 +3099,15 @@ public class MirthMigrator {
 					configuration = new JSONObject(IOUtils.toString(configurationTemplate, "UTF-8"));
 					logger.warn("There is not yet a configuration, loading default configuration template");
 				} catch (Exception e1) {
-					logger.error("We got an Oooopsi!");
+					logger.error("We got an Oooopsi!\n"+e1.getMessage());
 					e1.printStackTrace();
 				} finally {
 					// assure that resources are freed
 					try{configurationTemplate.close();}catch(Exception ex) {}
 				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 		
@@ -5230,7 +5234,7 @@ public class MirthMigrator {
 
 			// this usually means no valid session and is e.g. the case if the service had been restarted
 			if (responseCode == 401) {
-				String message = "Response stream is not available - re-login is needed (" + connection.getResponseCode() + ")";
+				String message = "Response stream is not available - re-login is needed (" + responseCode + ")";
 				connection.disconnect();		
 				logger.error(message);
 				result.put("responseCode", 400);
@@ -5240,7 +5244,7 @@ public class MirthMigrator {
 				return result;
 			}
 			if (responseCode == 403) {
-				String message = "Mirth service explicitly rejected the request (" + connection.getResponseCode() + ")";
+				String message = "Mirth service explicitly rejected the request (" + responseCode + ")";
 
 				logger.error(message);
 
