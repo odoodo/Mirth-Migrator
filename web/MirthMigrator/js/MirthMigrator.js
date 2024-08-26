@@ -140,8 +140,8 @@ function populateComponentTables(refresh) {
 		if(!componentTypeIsSelected) 
 		{
 			componentTypeIsSelected=true;
-			document.getElementById("sourceSelection").style.visibility="visible";
-			document.getElementById("destSelection").style.visibility="visible";
+			$("#sourceSelection").css("visibility", "visible");
+			$("#destSelection").css("visibility", "visible");
 		}
 		var componentType = $('input[name = "compType"]:checked').val();
 		var payload;
@@ -277,9 +277,11 @@ function accessResource(command, payload, action, parameters, refreshCache){
 					$("#reloadPopup").css('display','flex');
 
 					return;
-				} else if(statusCode == 422){
-					// there is not yet a configuration file. Thus force configurator to appear
-					loadSettings();
+				} else if(statusCode == 500){
+					if(!configSectionActive){
+						// there is not yet a configuration file. Thus force configurator to appear
+						loadSettings();
+					}
 					return;
 				}
 				
@@ -453,8 +455,30 @@ $(document).ready(function() {
 		// avoid reloading the page
 		event.preventDefault();
 		
-		// reload the application
-		window.location.replace('/mirthMigrator');
+		// close all divs (besides the main window)
+		$('#dialog').css('display', 'none');
+		$('#migrationReport').css('display', 'none');
+		$('#migrationIndicator').css('display', 'none');	
+		
+		// close all elements on the main window
+		$('#preComponentContent').css('display', 'none');
+		$('#contentHeader').css('visibility', 'hidden');
+		$('#collapseContentIcon').css('visibility', 'hidden');
+		$('#metaDataSection').css('display', 'none');
+		$('#collapseMetaDataIcon').css('visibility', 'hidden');
+		$('#migrationReport').css('visibility', 'hidden');
+		$('#migrationIndicator').css('visibility', 'hidden');
+		$('#componentTableLeft').css('visibility', 'hidden');
+		$('#componentTableRight').css('visibility', 'hidden');
+		$('#migrateButton').css('visibility', 'hidden');
+		$('#compareButton').css('visibility', 'hidden');
+		$('#flexBoxButtons').css('visibility', 'hidden');
+		sourceBoxShown = destBoxShown = false;
+// xxx;	
+		// reload environment list
+		accessResource('/getEnvironments', null, setEnvironments);
+		// and system list
+		accessResource('/getSystems', null, setSystems);
 	});
 	
 	$('#username').on('keydown', function(event) {
@@ -788,17 +812,20 @@ function changeTableBorderColor(systemType){
  * @param {String} systemType Either sourceSystem or destSystem
  */
 function displayHiddenBoxes(systemType){
-    if(!sourceBoxShown && systemType == "sourceSystem"){     
-        this.sourceBoxShown =true;
-        var box = document.getElementById('componentTableLeft');
-        box.style.display = "inline-block";
-        box.style.visibility = "visible";
+    if(!sourceBoxShown && systemType == 'sourceSystem'){     
+        this.sourceBoxShown =true;	
+		$("#componentTableLeft").css({
+			"display": "inline-block",
+			"visibility": "visible"
+		});
+
     }
-    if(!destBoxShown && systemType == "destSystem"){   
+    if(!destBoxShown && systemType == 'destSystem'){   
         this.destBoxShown = true;
-        var box= document.getElementById('componentTableRight');
-        box.style.visibility = "visible";
-        box.style.display = "inline-block";
+		$("#componentTableRight").css({
+			"display": "inline-block",
+			"visibility": "visible"
+		});
     }
 }
 
@@ -1459,8 +1486,10 @@ function metaDataChecker($row, systemType){
  */
 function populateMetaDataSection(component, componentType){
     metaDataTableShown=true;
-    document.getElementById('metaDataSection').style.visibility = "visible";
-    document.getElementById('collapseMetaDataIcon').style.visibility = "visible";
+
+	$('#metaDataSection').css({'display': 'block', 'visibility': 'visible'});
+	$('#collapseMetaDataIcon').css('visibility', 'visible');
+
     createMetaDataTable(component, componentType);
 }
 
@@ -1638,30 +1667,33 @@ function addConflictTableRow(key, value, table, currentRow){
 function populateContentSection(component){
 
     if(component.Type=="Channel"){
-        document.getElementById('preComponentContent').style.visibility = "visible";
-        document.getElementById("contentHeader").style.visibility = "visible";    
-        document.getElementById("collapseContentIcon").style.visibility = "visible";    
-        document.getElementById("preComponentContent").setAttribute("class", "xml");
-        document.getElementById("componentCode").innerHTML = component.content.replace(/\</g, "&lt;").replace(/\>/g, "&gt;");
-        }
-    else if(component.Type=="Code Template"){    
-        document.getElementById('preComponentContent').style.visibility = "visible";
-        document.getElementById("contentHeader").style.visibility = "visible";   
-        document.getElementById("collapseContentIcon").style.visibility = "visible";     
-        document.getElementById("preComponentContent").setAttribute("class", "javascript");
+		$('#preComponentContent').css({'display': 'block', 'visibility': 'visible'});
+		$("#contentHeader").css("visibility", "visible");
+		$("#collapseContentIcon").css("visibility", "visible");
+		
+		$("#preComponentContent").attr("class", "xml");
+		$("#componentCode").html(component.content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
+    } else if(component.Type=="Code Template"){    
+		$('#preComponentContent').css({'display': 'block', 'visibility': 'visible'});
+		$("#contentHeader").css("visibility", "visible");
+		$("#collapseContentIcon").css("visibility", "visible");
+
+		$("#preComponentContent").attr("class", "javascript");
         //escape html tags 
        // var regexp = /\/\*[\s\S]*?\*\//gm;
        // component.content = unquoteXml(component.content);
-        document.getElementById("componentCode").innerHTML = component.content.replace(/\</g, "&lt;").replace(/\>/g, "&gt;");
+        $("#componentCode").html(component.content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
         hljs.configure({tabReplace: '  '});
-    }
-    else{
-        document.getElementById("collapseContentIcon").style.visibility = "hidden";    
-        document.getElementById("preComponentContent").style.visibility = "hidden";
-        document.getElementById("contentHeader").style.visibility = "hidden";    
+    } else{
+		$('#preComponentContent').css({'display': 'none', 'visibility': 'hidden'});
+		$("#contentHeader").css("visibility", "hidden");
+		$("#collapseContentIcon").css("visibility", "hidden");
+		
         return;
     }
-    $('pre code').each(function(i, block) {
+	
+    $('pre code').each(function(index, block) {
+		// activate code highlighting for source code section
         hljs.highlightBlock(block);
     });
 
@@ -2096,7 +2128,7 @@ function handleMigrationConflict(statusCode, response){
         refreshConflictTable(response.name, response.type, errors); 
 		// Compare meta data of both versions of the conflicting component
         createConflictMetaDataTable(response.metaData);
-//xxx
+		
 		// show diff of component content
         updateDiff(response.sourceContent, response.destinationContent, 1);
 		$("#conflictCompareBeautifier").css('height', '70%')

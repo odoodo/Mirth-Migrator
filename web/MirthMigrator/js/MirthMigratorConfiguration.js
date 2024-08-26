@@ -24,6 +24,7 @@
   }
 
 var loadedConfigChecksum = null;
+var configSectionActive = false;
 
 /**
 Taken from https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
@@ -55,14 +56,17 @@ function calculateChecksum(jsonObject) {
 };
 
 function loadSettings(){
-	
-accessResource('/getConfiguration', null, openSettings);
+	// indicate that the config section is currently active
+	configSectionActive = true;
+	// load configuration and open config section
+	accessResource('/getConfiguration', null, openSettings);
 }
 
 /**
 Closes the settings panel and saves the configuration to disk, if it has changed
 */
 function saveSettings(){
+	
 	// read the configuration from the settings tabs
 	var configuration = generateConfiguration();
 	
@@ -74,20 +78,28 @@ function saveSettings(){
 	// only if the configuration has changed
 	if(configurationHasChanged){
 		// save the changes and force the active users to restart their session
-		accessResource('/setConfiguration', configuration, closeSettings);
+		accessResource('/setConfiguration', configuration, closeSettings, {'reloadSystemList':true});
 	} else{
 		// nothing has been changed. Only close the screen
 		closeSettings();
 	}
 }
 
-function closeSettings(){
+function closeSettings(statusCode, returnValue, reloadSystemList){
 	$("#configurationSection").css('display','none');
 	
 	// remove active flag from all tabs
 	$('.tablinks').each(function() {
 		$(this).removeClass("active");
 	});
+	// if the configuration has changed
+	if(reloadSystemList){
+		// reload the systems list. This will trigger the "system configuration has changed" popup
+		accessResource('/getSystems', null, setSystems);
+	}
+	// indicate that the config section is now deactivated
+	configSectionActive = true;
+
 }
 
 function setEnvironmentConfiguration(environmentConfiguration){
@@ -418,6 +430,9 @@ function addFilter(){
 }
 
 function openSettings(requestStatus, configuration){
+	
+	// indicate that the config section is currently active
+	configSectionActive = true;
 	
 	// create a checksum from the loaded settings for detecting later on if configuration has changed
 	loadedConfigChecksum = calculateChecksum(configuration);
