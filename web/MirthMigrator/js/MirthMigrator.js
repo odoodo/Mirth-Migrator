@@ -409,7 +409,7 @@ function openLogin(infoText) {
 		$('#username').focus();
 	} else{
 		// if username was already entered, set focus to the password
-		$('#password').focus();
+		$('#userpassword').focus();
 	}
 }
 
@@ -422,13 +422,13 @@ $(document).ready(function() {
 		// avoid reloading the page
 		event.preventDefault();
 		// generate a token
-		sessionId = encrypt($('#username').val() + ':' + $('#password').val());
+		sessionId = encrypt($('#username').val() + ':' + $('#userpassword').val());
 
 		// unshow the login form
 		$("#dialog").css('display','none');
 		$("#loginPopup").css('display','none');
 		// and remove the password
-		$('#password').val('');
+		$('#userpassword').val('');
 		
 		// get the list of queued commands
 		var requestList = pendingRequests;
@@ -484,13 +484,13 @@ $(document).ready(function() {
 	$('#username').on('keydown', function(event) {
 		if (event.key === "Enter") {
 			event.preventDefault(); // Prevent default form submission behavior
-			$('#password').focus();
+			$('#userpassword').focus();
 		}
 	});
-	$('#password').on('keydown', function(event) {
+	$('#userpassword').on('keydown', function(event) {
 		if (event.key === "Enter") {
 			event.preventDefault(); 
-			if(!$('#password').val().trim() || !$('#username').val().trim()){
+			if(!$('#userpassword').val().trim() || !$('#username').val().trim()){
 				$('#username').focus();
 			}else{
 				$('#submit').click();
@@ -501,7 +501,7 @@ $(document).ready(function() {
 	// if content of input fields has been changed
 	$('#login-form').on('keyup', 'input', function() {		
 		// disable or enable the submit button depending on the content of login & password
-		var isDisabled = (!$('#password').val().trim() || !$('#username').val().trim());
+		var isDisabled = (!$('#userpassword').val().trim() || !$('#username').val().trim());
 		$('#submit').prop('disabled', isDisabled);
 		$('#submit').removeClass().addClass(isDisabled ? 'buttonDisabled' : 'buttonEnabled');
 	});
