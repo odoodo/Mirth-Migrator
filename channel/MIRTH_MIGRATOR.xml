@@ -9,7 +9,7 @@ Please check https://github.com/odoodo/Mirth-Migrator for further details.&#xd;
 Version:&#xd;
 20240822: added support for configuration frontend&#xd;
 20240521: initial version</description>
-  <revision>414</revision>
+  <revision>416</revision>
   <sourceConnector version="3.7.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -216,7 +216,8 @@ if(headers.contains(&apos;sessionId&apos;) &amp;&amp; headers.getHeader(&apos;se
 			channelMap.put(&apos;responseStatusCode&apos;, &apos;500&apos;);
 			response.message = &apos;No configuration file&apos;;
 			responseMap.put(&apos;response&apos;, JSON.stringify(response));
-
+			channelMap.put(&apos;reason&apos;, response.message);
+			
 			return false;
 		}
 	}
@@ -268,7 +269,8 @@ if(responseStatusCode &gt; 399){
 	
 	// set the response
 	responseMap.put(&apos;response&apos;, JSON.stringify(response));
-
+	channelMap.put(&apos;reason&apos;, response.message);
+	
 	return false;
 }
 
@@ -1552,7 +1554,7 @@ responseMap.put(&apos;response&apos;, JSON.stringify({&apos;version&apos;: versi
       <waitForPrevious>true</waitForPrevious>
     </connector>
   </destinationConnectors>
-  <preprocessingScript>return message || {};</preprocessingScript>
+  <preprocessingScript>return message || &apos;{}&apos;;</preprocessingScript>
   <postprocessingScript>return;</postprocessingScript>
   <deployScript>// get Mirth Migrator version
 var mirthMigratorVersion = Packages.lu.hrs.mirth.migration.MirthMigrator.getVersion();
@@ -1604,7 +1606,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1724660523352</time>
+        <time>1725016943132</time>
         <timezone>Europe/Berlin</timezone>
       </lastModified>
       <pruningSettings>
