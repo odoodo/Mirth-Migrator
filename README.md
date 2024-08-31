@@ -22,54 +22,15 @@ If a component already exists at the destination instance, conflict handling wil
   <kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/9ba37e59-896c-4fb0-897c-2f133880d82f" width="160"></kbd>
 
 <h2>Installation</h2>
-<b>For Mirth experts:</b><br/>
+
+<b>Mirth Migrator runs locally as a Mirth channel</b> - all your data remains internally in your organization.
+
 <table>
   <tr><td><b>1.</b></td><td>Place the "web" folder in your "Mirth Connect" folder</td></tr>
   <tr><td><b>2.</b></td><td>Reference MirthMigrator.jar that you find at ./web/MirthMigrator/jar/ as custom resource</td></tr>
   <tr><td><b>3.</b></td><td>Import the MIRTH_MIGRATOR channel and reference the custom resource</td></tr>
-  <tr><td><b>4.</b></td><td>Configure Mirth Migrator (see configuration section for details)</td></tr>
+  <tr><td><b>4.</b></td><td>Configure Mirth Migrator</td></tr>
 </table><br/>
-<b>Detailed step by step instruction:</b><br/>
-Behind each step you can find a screenshot indicating what/where to click and in which order.<br/>
-<table>
-  <tr><td><b>1.</b></td><td>Copy the <b>folder "web"</b> to your Mirth installation (to <b>"&lt;Your Install Path&gt;\Mirth Connect"</b>)</td><td><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/bb711974-3afe-4f3e-876b-3a1c5c83f274" width="160"></td></tr>
-  <tr><td><b>2.</b></td><td>In Mirth Administrator open the <b>menu item "Settings"</b>, there the <b>tab "Resources"</b> and press <b>"Add Resources"</b></td><td><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/eb1a83c9-0cd3-4b08-b9be-1bc331677fb2" width="160"></td></tr>
-  <tr><td><b>3.</b></td><td>In the field <b>Directory</b> enter <b>"./web/MirthMigrator/jar"</b> and <b>name</b> the new Resource <b>"MirthMigrator"</b></td><td><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/e76d7350-07e5-4983-b79d-c3c15e4ed962" width="160"></td></tr>
-  <tr><td><b>4.</b></td><td><b>Save</b> the change and <b>press "Reload Resource"</b>.<br/>
-    Depending on your Mirth version it should now show something like "&lt;Your Installation Path&gt;/Mirth%20Connect/web/MirthMigrator/jar/MirthMigrator.jar" or just "MirthMigrator.jar" under "Loaded Libraries"</td><td><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/5c1229a7-67d3-47db-8815-0830d49a8a6d" width="160"></td></tr>
-  <tr><td><b>5.</b></td><td>Now go to menu item "<b>Channels</b>" and press "<b>Import Channel</b>"</td><td><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/7a8a787d-fc2f-49ec-a986-1ef7e417363d" width="160"></td></tr>
-  <tr><td><b>6.</b></td><td>Import <b>MIRTH_MIGRATOR.xml</b></td><td><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/486a7c18-c5dc-403c-8c36-26f03ee61d1e" width="160"></td></tr>
-  <tr><td><b>7.</b></td><td>Within the MIRTH_MIGRATOR-channel click on <b>tab "Summary"</b> (1st tab) and press <b>"Set Dependencies"</b></td><td><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/097d49df-9fb3-4ff3-ae88-a28b201d5185" width="160"></td></tr>
-  <tr><td><b>8.</b></td><td>Choose the <b>tab "Library Resources"</b> (2nd tab) in the up-popping dialog, activate the <b>checkbox</b> for <b>"Mirth Migrator"</b> and <b>press OK</b></td><td><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/5dc67b83-c667-475d-8a88-38e255928bfb" width="160"></td></tr>
-  <tr><td><b>9.</b></td><td><b><b>Save</b> the channel changes and <b>deploy</b> the channel</td><td><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/809cc23e-012a-4ba0-a2f4-6fc3eda93155" width="160"></td></tr>
-  <tr><td><b>10.</b></td><td>Mirth Migrator should now be available under <b>http://&lt;YOUR&nbsp;MIRTH&nbsp;SERVER&gt;:1339/MirthMigrator</b><br/><br/>
-  <i>$${\color{red}Please \space be \space aware \space that \space the \space Mirth \space Migrator \space needs \space to \space be \space configured \space before \space you \space can \space use \space it.}$$ $${\color{red}Check \space the \space configuration \space section \space below \space for \space details}$$</i></td><td><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/c52cb3f6-b78f-4cca-887f-00407c005f67" width="160"></td></tr>
-</table>
-
-<h2>Configuration</h2>
-Mirth Migrator does not (yet) feature a graphical configuration frontend.
-Thus, the configuration has to be changed in the configuration file directly.<br/>
-<br/>
-This <b>configuration file</b> can be found at: "&lt;Your&nbsp;Installation&nbsp;Path&gt;/Mirth&nbsp;Connect/web/MirthMigrator/config/<b>MirthMigrator.conf</b>"<br/>
-<br/>
-The configuration consists of 4 sections:
-<table>
-  <tr><td colspan=2><b>sessionLifeSpanInMinutes</b></td><td>Allows to determine the maximum inactivity period for a user session in minutes.<br/><i>If the value is 0, the user session will not expire</i></td></tr>
-  <tr><td rowspan=4><b>environment</b></td><td><b>id</b></td><td>A unique identifier of the environment<br/><i>1, 2, 3, etc.)</i></td></tr>
-  <tr><td><b>position</b></td><td>The order position of the environment <br/><i>1 will be displayed on top of the list, 2 will be displayed as second, etc.</i></td></tr>
-  <tr><td><b>name</b></td><td>The name of the environment <br/><i>e.g. Production, Test, Development, Fallback</i></td></tr>
-  <tr><td><b>color</b></td><td>The color in which servers of this environment will be shown <br/><i>use html colors</i></td></tr>
-  <tr><td rowspan=7><b>system</b></td><td><b>name</b></td><td>The name of the Mirth system<br/><i>Any name can be used, e.g. Production Server 1, My Test System</i></td></tr>
-  <tr><td><b>server</b></td><td>The name or ip of the Mirth server that should be accessed</td></tr>
-  <tr><td><b>port</b></td><td>The port at which the Mirth server exposes it's API <br/><i>By default, this port is <b>8443</b></i></td></tr>
-  <tr><td><b>environment</b></td><td>The <b>ID of the environment</b> to which this Mirth server should be assigned<br/><i>This ID must correspond to an id attribute of the environment section</i></td></tr>
-  <tr><td><b>description</b></td><td>An optional text that describes your Mirth environment<br/><i>e.g. "Hosts all medical channels" or "Server for administrative channels"</i></td></tr>
-  <tr><td><b>user</b></td><td>The Mirth user that Mirth Migrator should use to access this Mirth instance <br/><i>It makes sense to create a "system"-user on every Mirth instance that should be accessed by Mirth administrator. This might be a user like "system", or "maintanance", or "migration"</i></td></tr>
-  <tr><td><b>password</b></td><td>The password of the Mirth user that Mirth Migrator should use to access this Mirth instance</td></tr>
-  <tr><td colspan=2><b>excludeFromFunctionDetection</b></td><td>Mirth Migrator has a parser that detects function references for detecting user defined functions. <br/><br/>However there might be false positives like function calls in SQL statements or calls to Mirth maps. Those functions would be displayed as functions for which the source could not be identified. <br/><br/>For avoiding false positives, the function names can be added to this filter list.</td></tr>
-</table>
-
-Any <b>changes</b> of the configuration <b>are applied on the fly</b>. There is no need to restart the MIRTH_Migrator channel.
 
 When you access Mirth Migrator, it asks you to <b>log in</b>. Simply <b>use your Mirth account</b> of the Mirth instance at which the MIRTH_MIGRATOR channel is running.
 
@@ -78,7 +39,7 @@ Mirth Migrator makes use of a number of other open source projects:
 <ul>
 <li><a href="https://github.com/stleary/JSON-java" target="_blank">JSON in Java</a> (A JSON implementation for Java)</li>
 <li><a href="https://github.com/qiao/difflib.js/" target="_blank">Difflib.js</a> (for providing diffs)</li>
-<li></li><a href="https://highlightjs.org/" target="_blank">highlight.js</a> (for code highlighting)</li>
+<li><a href="https://highlightjs.org/" target="_blank">highlight.js</a> (for code highlighting)</li>
 </ul>
 <br/>
 <i>Please let me know if I forgot to mention your project.</i>
