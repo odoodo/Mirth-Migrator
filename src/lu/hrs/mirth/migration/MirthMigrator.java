@@ -2545,7 +2545,7 @@ public class MirthMigrator {
 		// lazy fetching
 		if (this.channelInfo == null) {
 			// initialize container
-			this.channelInfo = new HashMap<String, JSONObject>();
+			HashMap<String, JSONObject> channelInfo = new HashMap<String, JSONObject>();
 			this.channelFunctionReferences = new HashMap<String, ArrayList<String>>();
 			this.channelReferencesToFunction = new HashMap<String, TreeSet<String>>();
 			this.channelInternalFunctions = new HashMap<String, ArrayList<String>>();
@@ -2559,6 +2559,7 @@ public class MirthMigrator {
 				raw = raw.getJSONObject("list");
 			} catch (JSONException e) {
 				// if the channel group is empty, there will be no channel information
+				this.channelInfo = channelInfo;
 				return this.channelInfo;
 			}
 
@@ -2710,8 +2711,9 @@ public class MirthMigrator {
 				}
 				// write the meta data to cache
 
-				this.channelInfo.put(metaData.getString("Id"), metaData);
+				channelInfo.put(metaData.getString("Id"), metaData);
 			}
+			this.channelInfo = channelInfo;
 			// update the update indicator
 			this.lastUpdate = System.currentTimeMillis();
 		}
@@ -2802,7 +2804,7 @@ public class MirthMigrator {
 	 *            The source code of the channels (channel definition)
 	 * @throws ConfigurationException
 	 */
-	private void buildUpCodeTemplateRelationships(String xml) throws ConfigurationException {
+	private synchronized void buildUpCodeTemplateRelationships(String xml) throws ConfigurationException {
 
 		String channelDefinition = null;
 		Matcher channelMatcher, idMatcher, functionReferenceMatcher, functionNameMatcher;
@@ -2848,7 +2850,7 @@ public class MirthMigrator {
 					continue;
 				}
 				
-				// if this reference was alread detected
+				// if this reference was already detected
 				if(detectedFunctions.contains(functionName)) {
 					// no need to scan it again
 					continue;
