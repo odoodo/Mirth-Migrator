@@ -3,13 +3,16 @@
 	z-index: 99;
     display: none; 
     width: 100%;
- //   height: 100%;
     overflow: auto;
     top: 0px;
     left: 0px;
     right: 0;
     bottom: 0;
     background-color: #ffffff;
+	background-image: linear-gradient(white 100px, transparent 100px), url('/img/backgroundConfiguration.png');
+	background-position: top, 0 100px;
+	background-repeat: no-repeat, repeat;
+	background-size: auto, auto; 
 }
 
 #environmentConfiguration, #systemConfiguration, #functionFilterConfiguration, #miscConfiguration {
@@ -83,6 +86,7 @@ table.parameters tr:last-child {
     flex-direction: column;
     padding:3px;
 	vertical-align: top;
+	background-color: rgba(255, 255, 255, 0.7);
 }
 
 .flexBoxLegend{
@@ -520,6 +524,13 @@ table.parameters tr:last-child {
 body.wait, body.wait *{
  cursor: wait !important;   
 }
+
+body {
+  background-image: url('/img/background.png');
+  background-repeat: repeat;
+/*  background-size: auto; */
+}
+
 
 .reloadOuter2 {
 	position: absolute;
