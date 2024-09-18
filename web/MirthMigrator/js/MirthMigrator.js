@@ -252,8 +252,9 @@ function accessResource(command, payload, action, parameters, refreshCache){
 					return;
 				}
 				
-				// invalid login
+				// no, or invalid login or expired session
 				if((statusCode == 401) || (statusCode == 440) || (statusCode == 400)){
+					
 					infoText = '';
 					
 					// temporarily store the request till the login was completed successfully
@@ -272,12 +273,13 @@ function accessResource(command, payload, action, parameters, refreshCache){
 					openLogin(infoText);
 					return;
 				} else if(statusCode == 409){
-					// and display the reload dialog
+					// configuration has changed
 					$("#dialog").css('display','block');
 					$("#reloadPopup").css('display','flex');
 
 					return;
 				} else if(statusCode == 500){
+					// no config file
 					if(!configSectionActive){
 						// there is not yet a configuration file. Thus force configurator to appear
 						loadSettings();
@@ -459,6 +461,7 @@ $(document).ready(function() {
 		$('#dialog').css('display', 'none');
 		$('#migrationReport').css('display', 'none');
 		$('#migrationIndicator').css('display', 'none');	
+		$("#reloadPopup").css('display','none');
 		
 		// close all elements on the main window
 		$('#preComponentContent').css('display', 'none');
