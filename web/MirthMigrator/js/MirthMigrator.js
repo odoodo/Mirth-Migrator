@@ -103,11 +103,46 @@ function indicateActivityEnd(){
  */
 function systemChanged(systemType){
 
-	// get the name of the system that has been set
+	// get the identifier of the system that has been set
 	var system = $('#' + systemType + ' option:selected').attr('id');
+	// and also it's display name
 	var systemName = $('#' + systemType + ' option:selected').val();
 	// re-enable all siblings of the currently selected item
     $("#" + systemType + " option[id=" + system + "]").attr("disabled", "disabled").siblings().removeAttr("disabled");
+	
+	// if system selection was removed
+	if(system == 'none'){
+		// depending on the chosen box	
+		if(systemType == 'sourceSystem'){
+			// hide the left box
+			$('#componentTableLeft').css('visibility', 'hidden');
+			sourceBoxShown = false;	
+		} else{
+			// hide the right box
+			$('#componentTableRight').css('visibility', 'hidden');
+			destBoxShown = false;	
+		}
+
+		// as there is now 1 box left at most, also hide interaction buttons
+		$('#migrateButton').css('visibility', 'hidden');
+		$('#compareButton').css('visibility', 'hidden');
+		// only hide refresh button if no box is shown anymore
+		if(!sourceBoxShown && !destBoxShown){
+			$('#flexBoxButtons').css('visibility', 'hidden');
+		}
+		
+		// and also all component detail information. 
+		// Improvement here would be to only hide them if the belong to the chosen box
+		$('#preComponentContent').css('display', 'none');
+		$('#contentHeader').css('visibility', 'hidden');
+		$('#collapseContentIcon').css('visibility', 'hidden');
+		$('#metaDataSection').css('display', 'none');
+		$('#collapseMetaDataIcon').css('visibility', 'hidden');
+
+		return;
+	}
+	
+
 	//change the color of the selectbox to the color of the environment to which the system belongs
     changeSelectionColor(systemType);
 	// displayes the list containing the components
@@ -336,8 +371,8 @@ function setSystems(statusCode, response){
 	// create the select box for choosing the second system
 	var systemSelectB = $('<select id="destSystem" class="" onchange="systemChanged(this.id)"></select>');
 	// add a default entry to both select boxes
-	systemSelectA.append('<option class="disabledOption" value="Please select a System" disabled="disabled" selected="selected">Please select a System</option>');
-	systemSelectB.append('<option class="disabledOption" value="Please select a System" disabled="disabled" selected="selected">Please select a System</option>');
+	systemSelectA.append('<option class="disabledOption" value="Please select a System" id="none" disabled="disabled" selected="selected">Please select a System</option>');
+	systemSelectB.append('<option class="disabledOption" value="Please select a System" id="none" disabled="disabled" selected="selected">Please select a System</option>');
 
 	// order systems by environment and name
 	var orderedSystems = new Map();
