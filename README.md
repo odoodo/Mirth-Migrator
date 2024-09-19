@@ -40,8 +40,7 @@ Mirth Migrator makes use of a number of other open source projects:
 <li><a href="https://github.com/stleary/JSON-java" target="_blank">JSON in Java</a> (A JSON implementation for Java)</li>
 <li><a href="https://github.com/qiao/difflib.js/" target="_blank">Difflib.js</a> (for providing diffs)</li>
 <li><a href="https://highlightjs.org/" target="_blank">highlight.js</a> (for code highlighting)</li>
+<li><a href="https://www.freepik.com/" target="_blank">Freepik</a> (for background image)</li>
 </ul>
-<br/>
-<i>Please let me know if I forgot to mention your project.</i>
 
 
