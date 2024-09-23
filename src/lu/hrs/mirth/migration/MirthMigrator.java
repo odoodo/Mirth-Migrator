@@ -2036,7 +2036,7 @@ public class MirthMigrator {
 	 *         </ul>
 	 * @throws ServiceUnavailableException
 	 */
-	private HashMap<String, JSONObject> getCodeTemplateInfo() throws ServiceUnavailableException {
+	private synchronized HashMap<String, JSONObject> getCodeTemplateInfo() throws ServiceUnavailableException {
 		// lazy fetching
 		if (this.codeTemplateInfo == null) {
 			// initialize container
