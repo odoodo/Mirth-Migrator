@@ -274,6 +274,16 @@ public class MirthMigrator {
 	private final static Pattern pruningPattern = Pattern.compile("<entry[\\s\\S]*?<\\/entry>");
 
 	/**
+	 * This pattern is used to find a channel pruning configuration
+	 */
+	private final static Pattern externalResourcesPattern = Pattern.compile("<resourceIds[\\s\\S]*?<\\/resourceIds>");
+
+	/**
+	 * This pattern is used to find a channel pruning configuration
+	 */
+	private final static Pattern externalResourceEntityPattern = Pattern.compile("<entry>[\\s\\S]*?<string>([^<]*)</string>[\\s\\S]*?<string>([^<]*)</string>[\\s\\S]*?</entry>");
+	
+	/**
 	 * This pattern is used to find channel references
 	 */
 	private final static Pattern channelIdPattern = Pattern.compile("<channelIds[\\s\\S]*?<\\/channelIds>");
@@ -351,7 +361,11 @@ public class MirthMigrator {
 	private HashMap<String, String> codeTemplateIdToLibraryId = null;
 	// provides code template libraries in alphabetical order
 	private TreeMap<String, String> codeTemplateLibraryOrder = null;
-
+	// provides information about all external resources that are referenced by the mirth instance
+	private HashMap<String, JSONObject> externalResources = null;
+	// stores inter-channel dependencies - ToDo: still has to be implemented
+	private HashMap<String, JSONObject> interChannelDependencies = null;
+	
 	// stores user sessions
 	private static final Map<String, HashMap<String, Object>> userSessionCache = Collections.synchronizedMap(new HashMap<String, HashMap<String, Object>>());
 
@@ -1819,6 +1833,8 @@ public class MirthMigrator {
 		this.functionLinkedByFunctions = null;
 		this.functionNameToCodeTemplateId = null;
 		this.functionUsesFunctions = null;
+		this.externalResources = null;
+		this.interChannelDependencies = null;
 	}
 
 	/**
@@ -2719,6 +2735,61 @@ public class MirthMigrator {
 		}
 
 		return this.channelInfo;
+	}
+	
+	/**
+	 * Provides information about an external resource that is referenced by Mirth
+	 * @param name The name of the external resource
+	 * @return A JSON object containing the following information:
+	 * <ul>
+	 * 	<li><b>name</b> - The name of the resource</li>
+	 * 	<li><b>id</b> - The mirth internal id of the resource</li>
+	 * 	<li><b>location</b> - The path to which the resource is pointing</li>
+	 * 	<li><b>description</b> - The description text of the resource</li>
+	 * 	<li><b>type</b> - The type of the resource</li>
+	 * </ul>
+	 * @throws ServiceUnavailableException 
+	 */
+	private JSONObject getExternalResource(String resourceName) throws ServiceUnavailableException {
+
+		if(this.externalResources == null) {
+			JSONObject resourceInfoRaw = null;
+			this.externalResources = new HashMap<String, JSONObject>();
+
+			// try to load the channel meta data from the API
+			resourceInfoRaw = getResponseAsJson(connectToRestService("/api/server/resources"));
+			
+			try {
+				// make sure the work continues w/ an JSON array
+				JSONArray resourceInfo = (resourceInfoRaw.get("com.mirth.connect.plugins.directoryresource.DirectoryResourceProperties") instanceof JSONArray) ? resourceInfoRaw.getJSONArray("com.mirth.connect.plugins.directoryresource.DirectoryResourceProperties")
+						: (new JSONArray()).put(resourceInfoRaw.get("com.mirth.connect.plugins.directoryresource.DirectoryResourceProperties"));
+				// cache external resources info
+				for (int index = 0; index < resourceInfo.length(); index++) {
+					// fetch the relevant resource attributes
+					String name = resourceInfo.getJSONObject(index).getString("name");
+					String id = resourceInfo.getJSONObject(index).getString("id");
+					String location = resourceInfo.getJSONObject(index).getString("directory");
+					String description = resourceInfo.getJSONObject(index).getString("description");
+					String type = resourceInfo.getJSONObject(index).getString("type");
+					
+					// create the object
+					JSONObject entry = new JSONObject();
+					entry.accumulate("name", name);
+					entry.accumulate("id", id);
+					entry.accumulate("location", location);
+					entry.accumulate("description", description);
+					entry.accumulate("type", type);
+					
+					// and add it to the cache
+					this.externalResources.put(name, entry);
+				}
+			} catch (Exception e) {
+				logger.error("Owh, getExternalResource() has to be revised! \n" + e.getMessage());
+			}
+		}
+
+		// try to fetch the external resource by the given name
+		return this.externalResources.get(resourceName);
 	}
 
 	/**
@@ -5839,6 +5910,18 @@ public class MirthMigrator {
 	}
 
 	/**
+	 * Provides the external resources configuration from the server
+	 * 
+	 * @return a list of all external resources
+	 * @throws ServiceUnavailableException
+	 */
+	private String getExternalResources() throws ServiceUnavailableException {
+		HttpURLConnection urlConnection = connectToRestService("/api/server/resources");
+
+		return getResponseAsXml(urlConnection);
+	}
+
+	/**
 	 * Migrates a list of channels and all their dependencies to a target mirth instance
 	 * 
 	 * @param targetSystem
@@ -5984,7 +6067,7 @@ public class MirthMigrator {
 			}
 			worklist.put(element);
 		}
-		// adjust the channel tags of the target system and migrate them
+		// adjust the channel pruning settings of the target system and migrate them
 		result = updateChannelPrunings(targetSystem, channelIds);
 		// check if operation was successful
 		operationSucceeded = result.getBoolean("success");
@@ -6000,8 +6083,30 @@ public class MirthMigrator {
 			element.put("errorCode", result.getInt("errorCode"));
 			element.put("errorMessage", result.getString("errorMessage"));
 		}
-
 		worklist.put(element);
+		
+		
+		// adjust inter-channel dependencies and migrate them
+		/*
+		// ToDo
+		result = updateExternalResources(targetSystem, channelIds);
+		// check if operation was successful
+		operationSucceeded = result.getBoolean("success");
+		// determine the list to which the migrated elements should be added
+		worklist = operationSucceeded ? success : failure;
+		element = new JSONObject();
+		// add the component id
+		element.put("name", "External Resources");
+		element.put("type", "externalResources");
+		if (!operationSucceeded) {
+			element.put("headers", result.getString("headers"));
+			element.put("configuration", result.getString("configuration"));
+			element.put("errorCode", result.getInt("errorCode"));
+			element.put("errorMessage", result.getString("errorMessage"));
+		}
+		worklist.put(element);
+		*/
+		
 		return overallResult;
 	}
 
@@ -6130,6 +6235,7 @@ public class MirthMigrator {
 	private JSONObject updateChannels(MirthMigrator targetSystem, String[] channelIds) throws ServiceUnavailableException {
 		JSONObject overallResult, result;
 		String sourceChannel;
+		Matcher externalResourcesMatcher, externalResourceEntityMatcher = null;
 
 		overallResult = new JSONObject();
 		overallResult.put("success", new JSONArray());
@@ -6140,6 +6246,25 @@ public class MirthMigrator {
 
 			// fetch the actual code of the channel that should be migrated from the source system
 			sourceChannel = getChannel(channelId);
+			
+			externalResourcesMatcher = externalResourcesPattern.matcher(sourceChannel);
+			// if an external resources section with content was found
+			if(externalResourcesMatcher.find()) {
+				// scan all referenced entities
+				externalResourceEntityMatcher = externalResourceEntityPattern.matcher(externalResourcesMatcher.group());
+				while(externalResourceEntityMatcher.find()) {
+					// get the external resource id
+					String resourceId = externalResourceEntityMatcher.group(1);
+					// and it's name
+					String resourceName = externalResourceEntityMatcher.group(2);
+					// now check if the destination Mirth instance references an external resource with the same name
+					JSONObject resource = targetSystem.getExternalResource(resourceName);
+					if(resource != null) {
+						// indeed. So replace the reference by the reference to the corresponding resource of the target system (for all connectors)
+						sourceChannel = sourceChannel.replaceAll("<string>" + resourceId + "</string>", "<string>" + resource.getString("id") + "</string>");
+					}
+				}	
+			}
 
 			// convert the format of the channel to the format of the target system
 			sourceChannel = convert(sourceChannel, getMirthVersion(), targetSystem.getMirthVersion());
@@ -6932,7 +7057,7 @@ public class MirthMigrator {
 	private JSONObject updateChannelPrunings(MirthMigrator targetSystem, String[] channelIds)
 			throws ConfigurationException, ServiceUnavailableException {
 		Matcher pruningMatcher, channelIdMatcher;
-		HashMap<String, String> targetSystemChannelPruningMapping = new HashMap<String, String>();
+		HashMap<String, String> targetSystemChannelPrunningMapping = new HashMap<String, String>();
 
 		JSONObject result = new JSONObject();
 
@@ -6967,13 +7092,13 @@ public class MirthMigrator {
 				throw new ConfigurationException("unable to find channel id: \n" + targetSystemChannelPruningCode);
 			}
 			// add a mapping for the pruning setting identified by the channel id
-			targetSystemChannelPruningMapping.put(channelIdMatcher.group(1), targetSystemChannelPruningCode);
+			targetSystemChannelPrunningMapping.put(channelIdMatcher.group(1), targetSystemChannelPruningCode);
 		}
 
 		// loop over all channels that should be migrated
 		for (String channelId : channelIds) {
 			// and remove their pruning settings from the target configuration
-			targetSystemChannelPruningMapping.remove(channelId);
+			targetSystemChannelPrunningMapping.remove(channelId);
 		}
 
 		/** 2.) fetch the pruning configurations form the source system */
@@ -7003,14 +7128,14 @@ public class MirthMigrator {
 			}
 
 			// This is a channel that should be migrated. So push it's pruning configuration to the target config
-			targetSystemChannelPruningMapping.put(channelId, sourceSystemChannelPruningCode);
+			targetSystemChannelPrunningMapping.put(channelId, sourceSystemChannelPruningCode);
 		}
 
 		/** 4.) assemble the updated pruning configuration for the destination system */
 		// create an empty configuration
 		String targetSystemChannelPrunings = "<map>\n";
 		// and add all channel prunings
-		for (String pruning : targetSystemChannelPruningMapping.values()) {
+		for (String pruning : targetSystemChannelPrunningMapping.values()) {
 			// add the channel pruning
 			targetSystemChannelPrunings += "  " + pruning + "\n";
 		}
@@ -7018,7 +7143,7 @@ public class MirthMigrator {
 		targetSystemChannelPrunings += "</map>\n";
 
 		// only migrate if there is something to migrate
-		if (targetSystemChannelPruningMapping.size() > 0) {
+		if (targetSystemChannelPrunningMapping.size() > 0) {
 			try {
 				// convert pruning settings
 				targetSystemChannelPrunings = convert(targetSystemChannelPrunings, getMirthVersion(), targetSystem.getMirthVersion());
@@ -7031,6 +7156,7 @@ public class MirthMigrator {
 
 		return result;
 	}
+	
 
 	/**
 	 * Provides a map that maps code templates to the library to which they belong
