@@ -11,8 +11,8 @@ var metaDataTableShown = false;
 /**
  * The last clicked and highlighted component and if it has a correspondance on the other system also the corresponding ID
  */
-var $selectedID;
-var $selectedCorrespondanceID;
+var selectedId;
+var selectedCorrespondanceItemId;
 /**
  * Two lists are necessary to keep track of a components id and and its corresponding type. The corresponding names are saved
  * to give the user feedback about which components were migrated.
@@ -896,10 +896,10 @@ function setSelectionHeaders(systemType, displayList)
 }
 
 /**
- * This function takes the table id as parameter and afterwards initiates the ajax call.
- * Once the ajax call returns, inside the response event the functions to update the table are called.
- * @param {*} systemType
- * @param {*} refreshCache If set, the component metadata at server-side will be reloaded
+ * This function populates a table
+ * @param {*} statusCode
+ * @param {*} displayList
+ * @param {*} parameters
  */
 function populateTable(statusCode, displayList, parameters){
 
@@ -935,9 +935,10 @@ function populateTable(statusCode, displayList, parameters){
 			// format the current line depending the item type (group or member)
 			if(currentItem['Group']){
 				// create a line for a group element
-				table += 	'<tr draggable="true" tabindex="0" class="' + ((currentItem['artificial']) ? 'unassigned" type="artificial"' : 'group" type="group"') + 
-							' name="' + currentItem['Type'] + 
+				table += 	'<tr draggable="true" tabindex="0" class="' + ((currentItem['artificial']) ? 'unassigned" rowType="artificial"' : 'group" rowType="group"') + 
+							' type="' + currentItem['Type'] + 
 							'" id="' + parameters.systemType + currentItem['Id'] + 
+							'" name="' + currentItem['Display name'] + 
 							'"><td>' + currentItem['Display name'] + 
 							' (' + currentItem["Number of members"] +
 							')</td><td>' + description + 
@@ -946,8 +947,9 @@ function populateTable(statusCode, displayList, parameters){
 							'</td></tr>';
 			} else{
 				table += 	'<tr draggable="true" tabindex="0" class="list_' + (index % 2) + 
-							'" name="' + currentItem['Type'] + 
+							'" type="' + currentItem['Type'] + 
 							'" id="' + parameters.systemType + currentItem['Id'] + 
+							'" name="' + (currentItem['Function name'] || currentItem['Display name']) + 
 							'" style="color:' + ((currentItem['Is disabled']) ? 'LightSlateGray' : 'black') + 
 							';"><td>' + (currentItem['Function name'] || currentItem['Display name']) + 
 							'</td><td>' + description + 
@@ -976,27 +978,36 @@ function populateTable(statusCode, displayList, parameters){
 		$("#" + parameters.systemType + "Items tr").click(function(event) {
 			//checks if the highlighting on another table has to be removed because it was clicked on the other side
 			checkSelection(isSource ? "tableDest" : "tableSource");
-			// determine if checkbox for avoiding to migrate refrenced code templates should be displayed
+
+			// determine if checkbox for also migrating referenced code templates should be displayed
 			adjustAvoidReferencedTemplatesOption(isSource);
 			//sets the meta data headers corresponding to the selected row such as component type, name and system
 			setMetaDataHeaders($(this), parameters.systemType);
 			//highlights the selected row
 			if(event.ctrlKey){
+				// select multiple
 				highlight($(this), parameters.systemType, true);
-			}
-			else if(event.shiftKey){
-				if($($selectedID).index() > $(this).index()){
-					while($($selectedID).index() > $(this).index()){
-						highlight($($selectedID).prev(), parameters.systemType, true);
+				if($("#"+ (isSource ? "tableSource" : "tableDest") + " tbody tr.highlight").length > 1){
+					checkSelection(isSource ? "tableDest" : "tableSource");
+				}
+			} else if(event.shiftKey){
+				// select range
+				if($(selectedId).index() > $(this).index()){
+					while($(selectedId).index() > $(this).index()){
+						highlight($(selectedId).prev(), parameters.systemType, true);
 					}
 				}
 				else{
-					while($($selectedID).index() < $(this).index()){
-						highlight($($selectedID).next(), parameters.systemType, true);
+					while($(selectedId).index() < $(this).index()){
+						highlight($(selectedId).next(), parameters.systemType, true);
 					}
 				}
-			}
-			else{
+				if($("#"+ (isSource ? "tableSource" : "tableDest") + " tbody tr.highlight").length > 1){
+					checkSelection(isSource ? "tableDest" : "tableSource");
+				}
+			} else{
+				// normal click
+				
 				//highlights just this one clicked row
 				highlight($(this), parameters.systemType, false);
 				//checks for a correspondancy on the other system
@@ -1006,7 +1017,7 @@ function populateTable(statusCode, displayList, parameters){
 				// also the id of the selected component
 				var componentId =$(this).attr('id').replace(parameters.systemType, "");
 				// and it's type (well this should somewhen changed to the type attribute)
-				var componentType = $(this).attr('name');
+				var componentType = $(this).attr('type');
 				//setCheckBoxes(componentType);   
 				var payload = {
 									"system": systemName,
@@ -1119,162 +1130,6 @@ function showComponentDetails(statusCode, componentDetails, parameters){
 }
 
 /**
- * Displays either the channel groups with all contained channels or the code template libraries 
- * with all code templates in a table
- * @param {*} systemType Indicates which side, either source or dest will be refreshed.
- * @param {*} displayList The list of components that should be displayed.
- */
-function refreshTable(systemType, displayList){
-    var table = '';
-    //changes the table border color corresponding to the selected environment
-    changeTableBorderColor(systemType);
-
-	// check if a row in this table is currently selected
-    if($('#' + getComponentTableName(systemType) + ' > tbody > tr.highlight').length){
-		// indeed, it is. So remove the migration button as selection is no longer valid
-		$("#migrateButton").css('visibility', 'hidden');
-		$("#compareButton").css('visibility', 'hidden');
-	}
-
-
-    //empties the table
-    $('#' + systemType + "Items").empty();
-    var itemList = displayList['item'];
-
-	// if there are no items, there is nothing to do
-	if(itemList == undefined){
-		return;
-	}
-
-	// now add the items to the table
-	for(var index = 0; index < itemList.length; index++){
-		// get next item
-		var currentItem = itemList[index];
-		//checks if description exists and creates row in case it exists
-		var description = currentItem['Description'] ? '<img src="/img/info.png" tooltip="'+ currentItem['Description'] + '" id="descriptionIcon">' : ''; 
-		// format the current line depending the item type (group or member)
-		if(currentItem['Group']){
-			// create a line for a group element
-			table += 	'<tr draggable="true" tabindex="0" class="' + ((currentItem['artificial']) ? 'unassigned" type="artificial"' : 'group" type="group"') + 
-						' name="' + currentItem['Type'] + 
-						'" id="' + systemType + currentItem['Id'] + 
-						'"><td>' + currentItem['Display name'] + 
-						' (' + currentItem["Number of members"] +
-						')</td><td>' + description + 
-						'</td><td>' + currentItem['Display date']  + 
-						'</td><td class="right">' + currentItem['Version'] + 
-						'</td></tr>';
-		} else{
-			table += 	'<tr draggable="true" tabindex="0" class="list_' + (index % 2) + 
-						'" name="' + currentItem['Type'] + 
-						'" id="' + systemType + currentItem['Id'] + 
-						'" style="color:' + ((currentItem['Is disabled']) ? 'LightSlateGray' : 'black') + 
-						';"><td>' + currentItem['Display name'] + 
-						'</td><td>' + description + 
-						'</td><td>' + currentItem['Display date']  + 
-						'</td> <td class="right">' + currentItem['Version'] + 
-						'</td></tr>';
-		}
-	}      
-	
-		$('#' + systemType + "Items").append(table);
-		table = '';
-	
-	
-	// activate custom tooltips for the info icons
-    activateToolTips();
-	
-    //DEFINING ON CLICK FUNCTION FOR THE ROWS OF THE TABLE
-    $("#" + systemType + "Items tr").click(function(event) {
-        //correspondingContainer is the table id
-        var correspondingContainer = (systemType == "sourceSystem") ? "tableDest" : "tableSource";
-        //checks if the highlighting on another table has to be removed because it was clicked on the other side
-        checkSelection(correspondingContainer);
-        //sets the meta data headers corresponding to the selected row such as component type, name and system
-        setMetaDataHeaders($(this), systemType);
-        //highlights the selected row
-        if(event.ctrlKey){
-            highlight($(this), systemType, true);
-        }
-        else if(event.shiftKey){
-            if($($selectedID).index() > $(this).index()){
-                while($($selectedID).index() > $(this).index()){
-                    highlight($($selectedID).prev(), systemType, true);
-                }
-            }
-            else{
-                while($($selectedID).index() < $(this).index()){
-                    highlight($($selectedID).next(), systemType, true);
-                }
-            }
-        }
-        else{
-            //highlights just this one clicked row
-            highlight($(this), systemType, false);
-            //checks for a correspondancy on the other system
-            metaDataChecker($(this), systemType);
-            var componentID =$(this).attr('id').replace(systemType, "");
-            //the name attribute contains information about the type such as channel, code template e.g.
-            var componentType = $(this).attr('name');
-			// determine the concerned system
-			var systemName = $('#' + systemType + ' option:selected').val();
-            //the actual name of the component is to be found in its first data cell.
-            var componentName = $(this).find('td:first').html();
-            //setCheckBoxes(componentType);      
-            //calls the ajax function to retrieve information to fill the metadatatable and the content section
-            accessResource("getComponentDetails", componentType, systemName, systemType, componentID);     
-        }
-
-    });
-    //dragDropTable(systemType);
-    
-    var divTable = (systemType=="sourceSystem") ? "#tableSource" : "#tableDest";
-    var $table = $(table);
-    var $divTable = $(divTable);
-    $divTable.keydown(function (e) {
-        e.preventDefault();
-    });
-    var table = (systemType=="sourceSystem") ? "#sourceComponents" : "#destComponents";
-    $(table).unbind('keydown').keydown(function (e) {
-        switch(e.which)
-        {
-            //key LEFT pressed
-            case 37:
-                if($("#sourceComponents tr.componentCorrespondance").length > 0){
-                    $("#sourceComponents tr.componentCorrespondance").click().focus();
-                }
-                break;
-
-            //key UP pressed
-            case 38:
-                if($(table + " tr.highlight").index() > 0){
-                var $prev = $(table + " tr.highlight").prev();
-                $prev.click();
-                scrollIntoView($prev);
-                }
-                break;
-            //key RIGHT pressed
-            case 39:
-                if($("#destComponents tr.componentCorrespondance").length > 0){
-                    $("#destComponents tr.componentCorrespondance").click().focus();
-                }
-                break;
-            //key DOWN pressed
-            case 40:
-            if($(table + " tr.highlight").index() < $(table + " tr").length-1){
-                var $next = $(table + " tr.highlight").next();
-                $next.click();
-                scrollIntoView($next);
-            }
-                break;
-            
-            
-            
-                
-        }
-    });
-}
-/**
  * Defines if the checkboxes should be displayed or not.
  * @param {*} componentType the type of the selected component.
  */
@@ -1294,38 +1149,16 @@ function setCheckBoxes(componentType){
  * @param tableRow the row that should remain visible
  */
 function scrollIntoView(tableRow) {
-	// reference to the div containing the table
-    var container = $(tableRow).closest("div");
-	// the height of the div
-    var containerHeight = $(container).height();
-	// top coordinate of div
-    var minPos = $(container).scrollTop();
-	// bottom coordinate of the div
-    var maxPos = minPos + containerHeight;
-    // top coordinate of selected row	
-    var rowIndex = $(tableRow)[0].rowIndex;
-	// the height of the row
-    var rowHeight = $(tableRow).height();
-	// the coordinate of the top of the row
-	var rowTop = rowIndex*rowHeight;
-		if(rowIndex > 0){
-		rowTop += 1;
-    }
-	// bottom coordinate of selected row	
-    var rowBottom = rowTop + rowHeight;
-	if(rowTop < minPos){
-		// selected row should remain the first visible table row
-		$(container).scrollTop(rowTop);
-	} else if(rowBottom > maxPos){
-		// selected row should remain the last visible table row
-		$(container).scrollTop(rowBottom - containerHeight);
-	}
-	//$("#hoveredMessageText").html('container height=' + containerHeight + '\n rowIndex=' + rowIndex + '\n rowHeight=' + rowHeight + '\n rowTop=' + rowTop + '\n rowBottom=' + rowBottom + '\n lowPos=' + (rowBottom - containerHeight));
+	
+	var container = tableRow.closest("div");
+	container.animate({scrollTop: tableRow.offset().top - container.offset().top + container.scrollTop()}, 1);
 }
 
 /**
  * This function is called every time a user clicks, alas highlights a row and checks if there are highlighted elements on the other table.
  * @param {*} correspondingContainer 
+ 
+ ToDo: Check if really still needed as it is referenced just by 1 location
  */
 function checkSelection(correspondingContainer){
     var $selectedRows = $("#"+ correspondingContainer + " tbody tr.highlight");
@@ -1365,7 +1198,7 @@ function dragDropTable(systemType) {
  * @param {*} systemType The systemtype on which a row was clicked so either sourceSystem or destSystem
  */
 function setMetaDataHeaders($row, systemType){
-    var componentType = $row.attr('name');
+    var componentType = $row.attr('type');
     switch(componentType){
         case "channel":
             componentType = "channel";
@@ -1396,7 +1229,7 @@ function removeHighlighting(tableRow){
 	// remove all classes from item
 	$(tableRow).removeClass();
 	//and, depending on the row type, reasign the appropriate class
-	switch($(tableRow).attr('type')) {
+	switch($(tableRow).attr('rowType')) {
 		case 'group':
 			$(tableRow).addClass('group');
 			break;
@@ -1455,12 +1288,12 @@ function highlight($row, systemType, multipleRows) {
 		// highlight row
 		$row.addClass('highlight');
 		// a group row
-		if($row.attr('type')){
+		if($row.attr('rowType')){
 			// has to remain bold
 			$row.addClass('highlightGroup');
 		}
 		
-        $selectedID = "#" + $row.attr('id');
+        selectedId = "#" + $row.attr('id');
     }
 }
 
@@ -1470,51 +1303,44 @@ function highlight($row, systemType, multipleRows) {
  * @param {*} systemType The systemtype on which a row was clicked so either sourceSystem or destSystem
  */
 function metaDataChecker($row, systemType){
-
-    var correspondingSystem = (systemType == "sourceSystem") ? "destSystem" : "sourceSystem";
+	var correspondingComponentId = null;
+ //   var correspondingSystem = (systemType == "sourceSystem") ? "destSystem" : "sourceSystem";
+	// determine the corresponding container
     var correspondingContainer = (systemType =="sourceSystem") ? "tableDest" : "tableSource";
-    //id is build up like destSystem, replaces the systemType and replaces it with the corresponding one
-    var correspondingComponentID = $row.attr('id').replace(systemType, correspondingSystem);
-    //Because the table body is either sourceSystemItems or destSystemItems
-    var $tbody = $("#"+ correspondingSystem + "Items tbody");
+	// check for a corresponding item in the other table
+	var correspondingRow = $('#' + correspondingContainer + ' tr[name="' + $row.attr('name') + '"]');
+    if(correspondingRow){
+		// the id consists of the systemtype and the actual id
+		correspondingComponentId = correspondingRow.attr('id');
+	}
 	
-    if($selectedCorrespondanceID){
-        var lastFive = correspondingComponentID.substr(correspondingComponentID.length - 5);
-        if($row.hasClass('highlight') && $selectedCorrespondanceID.endsWith(lastFive)){
-            $($selectedCorrespondanceID).removeClass("componentCorrespondance");
-            $($selectedCorrespondanceID).addClass("highlight");
-        }
-        else{
-			removeHighlighting($selectedCorrespondanceID);
-        }
-		
-		// reset the remembered id
-		$selectedCorrespondanceID = null;
-    }
+	// if there was already a corresponding item highlighted
+	if(selectedCorrespondanceItemId && (selectedCorrespondanceItemId != $row.attr('id'))){	
+		// no longer needed, remove highlighting
+		removeHighlighting('#' + selectedCorrespondanceItemId);
+	}
 	
-    var $correspondingComponent = $("#" + correspondingComponentID);
-	// check if element with the same id is found in the other table
-    if($row.hasClass('highlight') && ($correspondingComponent.length > 0 )){
-		// it is. Thus highlight the element
-        $correspondingComponent.removeClass();
-        $correspondingComponent.addClass('componentCorrespondance');
-		if($correspondingComponent.attr('type')){
+	// if there was a new corresponding item found
+	if(correspondingComponentId){
+		var correspondingComponent = $("#" + correspondingComponentId);
+		// highlight it
+		correspondingComponent.removeClass();
+		correspondingComponent.addClass('componentCorrespondance');
+		// for grouping items
+		if(correspondingComponent.attr('rowType')){
 			// group rows shall remain bold even when highlighted
-			$correspondingComponent.addClass('highlightGroup');
+			correspondingComponent.addClass('highlightGroup');
 		}
-		
-        $selectedCorrespondanceID = "#" + correspondingComponentID;	
-		// assure that the corresponding row is displayed on screen
-        var $row = $("#" + correspondingComponentID);
-        scrollIntoView($row);
-		
-		// and check if the compare button can be displayed (no compare for channel groups and code template libraries)
-        var componentType = ($row.attr('name'));
-
-		$("#compareButton").css('visibility', ('|channelGroup|codeTemplateLibrary|'.indexOf('|' + componentType + '|') + 1) ? 'hidden' : 'visible');
-    } else{
-         $("#compareButton").css('visibility', 'hidden');
-    }
+		// make it visible (scroll it into view)
+		var container = correspondingComponent.closest("div");
+		container.animate({scrollTop: correspondingComponent.offset().top - container.offset().top + container.scrollTop()}, 1);
+	//	correspondingComponent[0].scrollIntoView({ behavior: "smooth", block: "center" });
+	//	scrollIntoView(correspondingComponent);
+		//and  also remember it
+		selectedCorrespondanceItemId = correspondingComponentId;
+		// do not show the compare button for grouping components
+		$('#compareButton').css('visibility', ('|channelGroup|codeTemplateLibrary|'.indexOf('|' + $row.attr('type') + '|') + 1) ? 'hidden' : 'visible');
+	}
 }
 
 /**
@@ -1654,6 +1480,9 @@ function createConflictMetaDataTable(metaData) {
     
 	if(metaData.name){
 		addConflictTableRow('name', metaData.name, table, startRowIndex++);
+	}
+	if(metaData.id){
+		addConflictTableRow('id', metaData.id, table, startRowIndex++);
 	}
 	if(metaData.description){
 		addConflictTableRow('description', metaData.description, table, startRowIndex++);
@@ -1905,7 +1734,7 @@ function getComponentName(component){
 	@return {String} The type of the component (codeTemplate, channel, channelGroup, or codeTemplateLibrary)
  */
 function getComponentType(component){
-	return component.attr('name');
+	return component.attr('type');
 }
 
 /**
