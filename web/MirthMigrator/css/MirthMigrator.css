@@ -442,7 +442,6 @@ table.parameters tr:last-child {
 	border-radius: 25px;
 	margin:auto; 
     height:auto; 
-    background:#eef;
 	border: 1px solid black;
 	visibility: hidden;
 	word-wrap: break-word;
@@ -814,6 +813,10 @@ body {
 }
 .newTableRowHighlight {
 	background-color: yellow !important;
+}
+
+.dontWrap{
+	vertical-align: middle;
 }
 
 input[type="color"] {
