@@ -931,7 +931,15 @@ function populateTable(statusCode, displayList, parameters){
 			// get next item
 			var currentItem = itemList[index];
 			//checks if description exists and creates row in case it exists
-			var description = currentItem['Description'] ? '<img src="/img/info.png" tooltip="'+ currentItem['Description'].replace(/"/g, '&quot;') + '" id="descriptionIcon">' : ''; 
+			var description = currentItem['Description'] ? '<img src="/img/info.png" tooltip="'+ currentItem['Description'].replace(/"/g, '&quot;') + '" id="descriptionIcon" class="dontWrap">' : ''; 
+			if(currentItem['Issues']){
+				// if there is no info icon
+				if(!description){
+					// add some extra space to vertically align the warning icons (more or less)
+					description = '&nbsp;&nbsp;&nbsp;&nbsp;';
+				}
+				description += '&nbsp;&nbsp;<img src="/img/warning.png" tooltip="The following library reference'+ ((currentItem['Issues'].length == 1) ? ' is missing' : 's are missing') + ':\n<ul><li>'+ currentItem['Issues'].sort().join('</li><li>').replace(/"/g, '&quot;') + '</ul>" id="warningIcon"  class="dontWrap">';
+			}
 			// format the current line depending the item type (group or member)
 			if(currentItem['Group']){
 				// create a line for a group element
@@ -941,7 +949,7 @@ function populateTable(statusCode, displayList, parameters){
 							'" name="' + currentItem['Display name'] + 
 							'"><td>' + currentItem['Display name'] + 
 							' (' + currentItem["Number of members"] +
-							')</td><td>' + description + 
+							')</td><td style="text-align: left;">' + description + 
 							'</td><td>' + currentItem['Display date']  + 
 							'</td><td class="right">' + currentItem['Version'] + 
 							'</td></tr>';
@@ -952,7 +960,7 @@ function populateTable(statusCode, displayList, parameters){
 							'" name="' + (currentItem['Function name'] || currentItem['Display name']) + 
 							'" style="color:' + ((currentItem['Is disabled']) ? 'LightSlateGray' : 'black') + 
 							';"><td>' + (currentItem['Function name'] || currentItem['Display name']) + 
-							'</td><td>' + description + 
+							'</td><td style="text-align: left;">' + description + 
 							'</td><td>' + currentItem['Display date']  + 
 							'</td> <td class="right">' + currentItem['Version'] + 
 							'</td></tr>';
@@ -2241,6 +2249,7 @@ function activateToolTips(){
 		function(){ 
 			var tooltip = $("#HtmlToolTip");
 			$(tooltip).css('display','block');
+			$(tooltip).css('background-color', '#eef'); 
 			var offset = $(this).offset();
 			// set the tooltip content
 			$(tooltip).html($(this).attr('tooltip').replace(/\n/g, "<br/>"));
@@ -2260,6 +2269,33 @@ function activateToolTips(){
 			$(tooltip).css('visibility', 'hidden');
 		}
 	);
+	
+	// add events for making the tooltip visible when hovering over the referencing item
+	$('[id=warningIcon]').hover(
+		function(){ 
+			var tooltip = $("#HtmlToolTip");
+			$(tooltip).css('display','block');
+			$(tooltip).css('background-color', '#f9c6c6');
+			var offset = $(this).offset();
+			// set the tooltip content
+			$(tooltip).html($(this).attr('tooltip').replace(/\n/g, "<br/>"));
+			// and calculate it's relative position
+			var topPos = ((offset.top - $(tooltip).outerHeight()) < 0) ? 0 : offset.top - $(tooltip).outerHeight();
+			topPos = (topPos < 0) ? 0 : topPos;
+			var leftPos = offset.left - ($(tooltip).outerWidth() / 2);
+			leftPos = (leftPos < 0) ? 0 : leftPos;
+			$(tooltip).offset({top: topPos, left: leftPos});
+			
+			// display the text in the label
+			$(tooltip).css('visibility', 'visible');
+		},
+		function(){ 
+			var tooltip = $("#HtmlToolTip");
+			$(tooltip).html('');
+			$(tooltip).css('visibility', 'hidden');
+		}
+	);
+
 }
 
 /**
