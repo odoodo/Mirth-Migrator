@@ -346,7 +346,7 @@ public class MirthMigrator {
 	// a list of functions used by a channel and properly linked
 	private HashMap<String, ArrayList<String>> channelFunctionReferences = null;
 	// a list of functions that are defined within the channel itself
-	private HashMap<String, ArrayList<String>> channelInternalFunctions = null;
+	private HashMap<String, ArrayList<String>> channelInternalFunctionsByChannelId = null;
 	// Resolves a channel name to it's id
 	private HashMap<String, String> channelIdbyName = null;
 	// Resolves a channel id to it's name
@@ -358,7 +358,7 @@ public class MirthMigrator {
 	// a list of functions that are used by a function
 	private HashMap<String, ArrayList<String>> functionUsesFunctions = null;
 	// A link between functions and the code template to which they belong
-	private HashMap<String, String> functionNameToCodeTemplateId = null;
+	private HashMap<String, String> codeTemplateIdByFunctionName = null;
 	// maps channel group meta information to the channel group id
 	private HashMap<String, JSONObject> channelGroupInfo = null;
 	// provides channel groups in alphabetical order
@@ -366,7 +366,7 @@ public class MirthMigrator {
 	// maps code template library meta information to the code template library id
 	private HashMap<String, JSONObject> codeTemplateLibraryInfo = null;
 	// maps a code template id to a code template library id
-	private HashMap<String, String> codeTemplateIdToLibraryId = null;
+	private HashMap<String, String> codeTemplateLibraryIdByCodeTemplateId = null;
 	// provides code template libraries in alphabetical order
 	private TreeMap<String, String> codeTemplateLibraryOrder = null;
 	// provides information about all external resources that are referenced by the mirth instance
@@ -1828,21 +1828,21 @@ public class MirthMigrator {
 		this.channelGroupInfo = null;
 		this.channelGroupOrder = null;
 		this.channelInfo = null;
-		this.channelInternalFunctions = null;
+		this.channelInternalFunctionsByChannelId = null;
 		this.channelLastModified = null;
 		this.channelReferencesToFunction = null;
 		this.channelState = null;
 		this.channelIdbyName = null;
 		this.channelNameById = null;
 		this.codeTemplateIdToFunction = null;
-		this.codeTemplateIdToLibraryId = null;
+		this.codeTemplateLibraryIdByCodeTemplateId = null;
 		this.codeTemplateInfo = null;
 		this.codeTemplateLibraryInfo = null;
 		this.codeTemplateLibraryOrder = null;
 		this.codeTemplateIdbyName = null;
 		this.codeTemplateNameById = null;
 		this.functionLinkedByFunctions = null;
-		this.functionNameToCodeTemplateId = null;
+		this.codeTemplateIdByFunctionName = null;
 		this.functionUsesFunctions = null;
 		this.externalResources = null;
 		this.interChannelDependencies = null;
@@ -1887,7 +1887,6 @@ public class MirthMigrator {
 
 		// lazy fetching
 		if (this.codeTemplateLibraryInfo == null) {
-logger.debug("################# Building code template library info from scratch ("+this.server+") #################");
 			HttpURLConnection service = null;
 			// either code-template libraries or channel groups
 			JSONObject raw = null;
@@ -1901,8 +1900,8 @@ logger.debug("################# Building code template library info from scratch
 			this.codeTemplateLibraryInfo = new HashMap<String, JSONObject>();
 			this.codeTemplateLibraryOrder = new TreeMap<String, String>();
 			this.channelCodeTemplateLibraryReferences = new HashMap<String, ArrayList<String>>();
-			this.codeTemplateIdToLibraryId = new HashMap<String, String>();
-			this.functionNameToCodeTemplateId = new HashMap<String, String>();
+			this.codeTemplateLibraryIdByCodeTemplateId = new HashMap<String, String>();
+			this.codeTemplateIdByFunctionName = new HashMap<String, String>();
 
 			// if there are no code template libraries at the Mirth instance
 			if (raw == null) {
@@ -1990,9 +1989,9 @@ logger.debug("################# Building code template library info from scratch
 						// and add it to the ordered map with its name as key
 						groupMemberOrder.put(functionName.toLowerCase(), codeTemplateId);
 						// create mapping from function to library
-						this.codeTemplateIdToLibraryId.put(codeTemplateId, libraryId);
+						this.codeTemplateLibraryIdByCodeTemplateId.put(codeTemplateId, libraryId);
 						// and also one from function name to code template
-						this.functionNameToCodeTemplateId.put(functionName, codeTemplateId);
+						this.codeTemplateIdByFunctionName.put(functionName, codeTemplateId);
 						
 						int counter = 2;
 						String functionId = null;
@@ -2004,9 +2003,9 @@ logger.debug("################# Building code template library info from scratch
 							// add it to the order list
 							groupMemberOrder.put(functionName.toLowerCase(), functionId);
 							// create mapping from function to library
-							this.codeTemplateIdToLibraryId.put(functionId, libraryId);
+							this.codeTemplateLibraryIdByCodeTemplateId.put(functionId, libraryId);
 							// and also one from function name to code template
-							this.functionNameToCodeTemplateId.put(functionName, codeTemplateId);
+							this.codeTemplateIdByFunctionName.put(functionName, codeTemplateId);
 						}
 					}
 
@@ -2681,7 +2680,7 @@ logger.debug("################# Building code template library info from scratch
 			HashMap<String, JSONObject> channelInfo = new HashMap<String, JSONObject>();
 			this.channelFunctionReferences = new HashMap<String, ArrayList<String>>();
 			this.channelReferencesToFunction = new HashMap<String, TreeSet<String>>();
-			this.channelInternalFunctions = new HashMap<String, ArrayList<String>>();
+			this.channelInternalFunctionsByChannelId = new HashMap<String, ArrayList<String>>();
 			this.channelIdbyName = new HashMap<String, String>();
 			this.channelNameById = new HashMap<String, String>();
 			
@@ -2850,8 +2849,26 @@ logger.debug("################# Building code template library info from scratch
 					// indicate if channel is disabled
 					metaData.accumulate("Is disabled", channelDisabled);
 				}
-				// write the meta data to cache
+				
+				/*** ISSUES  BEGIN **/
+				// get a validated list of used functions
+				TreeMap<String, String> validatedFunctions = validatedFunctionReferences(channelId);
 
+			
+				// get the validated list of (to be) referenced libraries
+				JSONObject libraryReferences = generateValidatedReferencedLibraryList(channelId,
+						(validatedFunctions != null) ? validatedFunctions.keySet() : null);
+
+				JSONArray issues = libraryReferences.getJSONArray("issues");
+				// and if there are any
+				if (issues.length() > 0) {
+					// add the list of missing libraries
+					metaData.put("Issues", issues);
+				}
+				
+				/*** ISSUES  END **/
+				
+				// write the meta data to cache
 				channelInfo.put(metaData.getString("Id"), metaData);
 			}
 			this.channelInfo = channelInfo;
@@ -3111,7 +3128,7 @@ logger.debug("################# Building code template library info from scratch
 			// if internal functions where found
 			if (channelFunctions.size() > 0) {
 				// add them to cache
-				this.channelInternalFunctions.put(channelId, channelFunctions);
+				this.channelInternalFunctionsByChannelId.put(channelId, channelFunctions);
 			}
 		}
 	}
@@ -3545,43 +3562,62 @@ logger.debug("################# Building code template library info from scratch
 		}
 		// the id of the channel
 		result.accumulate("Id", channelId);
-		// parse the channel
-		ArrayList<String> functionReferences = getChannelFunctionReferences(channelId);
-
-		// get the list of referenced libraries
-		ArrayList<String> codeTemplateLibaryReferences = getChannelCodeTemplateLibraryReferences(channelId);
-		if (codeTemplateLibaryReferences == null) {
-			// no libraries have been referenced - create a dummy
-			codeTemplateLibaryReferences = new ArrayList<String>();
-		}
 
 		// get a validated list of used functions
-		TreeMap<String, String> validatedFunctions = validatedFunctionReferences(codeTemplateLibaryReferences, functionReferences,
-				this.channelInternalFunctions.get(channelId));
+		TreeMap<String, String> validatedFunctions = validatedFunctionReferences(channelId);
 		if (validatedFunctions != null) {
 			// get a list of functions used by the channel and add it to the metadata
 			result.put("Uses functions", validatedFunctions.values());
 		}
-
+	
 		// get the validated list of (to be) referenced libraries
-		Collection<String> libraryReferences = generateValidatedReferencedLibraryList(codeTemplateLibaryReferences,
+		JSONObject libraryReferences = generateValidatedReferencedLibraryList(channelId,
 				(validatedFunctions != null) ? validatedFunctions.keySet() : null);
+		JSONArray libraries = libraryReferences.getJSONArray("libraries");
 		// and if there are any
-		if (libraryReferences.size() > 0) {
+		if (libraries.length() > 0) {
 			// add the list of referenced channel libraries
-			result.accumulate("Referenced Libraries", libraryReferences);
+			result.put("Referenced Libraries", libraries);
 		}
+
+		JSONArray issues = libraryReferences.getJSONArray("issues");
+		// and if there are any
+		if (libraries.length() > 0) {
+			// add the list of missing li
+			result.put("Issues", issues);
+		}
+		
 		// now load the channel code
 		String code = getResponseAsXml(connectToRestService("/api/channels?channelId=" + channelId));
 		// decode xml
 		code = code.replaceAll("&amp;", "&").replaceAll("&quot;", "\"").replaceAll("&apos;", "'").replaceAll("&gt;", ">").replaceAll("&lt;", "<")
 				.replaceAll("&#xd;", "\n");
-		// remove the embrasing list tag from the channel definition
+		// remove the embracing list tag from the channel definition
 		code = code.replaceAll("^\\s*<list>", "").replaceAll("</list>\\s*$", "");
 		// and add it to the structure
 		result.accumulate("content", code);
 
 		return result;
+	}
+	
+	
+	/**
+	 * Provides a list of functions that are directly defined in the channel
+	 * 
+	 * @param channelId
+	 *            The id of the channel
+	 * @return A list of function names or null if there are no functions that are defined in the channel itself
+	 * @throws ConfigurationException
+	 * @throws ServiceUnavailableException
+	 */
+	private ArrayList<String> getChannelInternalFunctions(String channelId) throws ConfigurationException, ServiceUnavailableException {
+		// check if the list of channel internal functions has been loaded
+		if (this.channelInternalFunctionsByChannelId == null) {
+			// nope, create it
+			getChannelInfo();
+		}
+
+		return this.channelInternalFunctionsByChannelId.get(channelId);
 	}
 
 	/**
@@ -3641,17 +3677,27 @@ logger.debug("################# Building code template library info from scratch
 	/**
 	 * Checks if functions are properly linked to a channel
 	 * 
-	 * @param referencedLibraries
-	 *            A list of ids of libraries referenced by the channel
-	 * @param usedFunctions
-	 *            A list of names of functions used by the channel
-	 * @param channelFunctions
-	 *            (OPTIONAL) A list of functions that are defined within the channel
+	 * @param channelId The id of the channel for which the function references should be validated
 	 * @return An ordered map of function names and their display strings or null if no or an empty function list was provided
 	 * @throws ServiceUnavailableException
+	 * @throws ConfigurationException 
 	 */
-	private TreeMap<String, String> validatedFunctionReferences(ArrayList<String> referencedLibraries, ArrayList<String> usedFunctions,
-			ArrayList<String> channelFunctions) throws ServiceUnavailableException {
+	private TreeMap<String, String> validatedFunctionReferences(String channelId) throws ServiceUnavailableException, ConfigurationException {
+		
+
+		// get the list of referenced libraries
+		ArrayList<String> referencedLibraries = getChannelCodeTemplateLibraryReferences(channelId);
+		if (referencedLibraries == null) {
+			// no libraries have been referenced - create a dummy
+			referencedLibraries = new ArrayList<String>();
+		}
+		
+		// parse the channel
+		ArrayList<String> usedFunctions = getChannelFunctionReferences(channelId);
+
+
+		ArrayList<String> channelFunctions = getChannelInternalFunctions(channelId);
+		
 		return validatedFunctionReferences(referencedLibraries, usedFunctions, channelFunctions, null);
 	}
 
@@ -3683,7 +3729,7 @@ logger.debug("################# Building code template library info from scratch
 		ArrayList<String> indirectFunctions = null;
 
 		// get the list of code template to code template library dependencies
-		HashMap<String, String> codeTemplateToLibary = getCodeTemplateToLibrary();
+		HashMap<String, String> codeTemplateToLibary = getCodeTemplateLibraryIdByCodeTemplateId();
 
 		// validate each function
 		for (String functionName : referencedFunctions) {
@@ -3743,19 +3789,25 @@ logger.debug("################# Building code template library info from scratch
 		return validatedFunctionReferences;
 	}
 
+
 	/**
 	 * Provides a list of libraries that have to be referenced by a channel. Green means the library is properly referenced, red means it is not
 	 * referenced but should be, grey means it is referenced but not needed.
 	 * 
-	 * @param referencedLibraries
-	 *            A list of IDs of libraries referenced by the channel
+	 * @param channelId
+	 *            The id of the channel for which the list should be generated
 	 * @param usedFunctions
 	 *            A list of names of functions used by the channel
-	 * @return A list of names of code template libraries that are either needed and referenced (green), needed but not yet referenced (red), or
-	 *         referenced but not detected as needed (grey)
+	 * @return A JSON object containing the following information:
+	 * <ul>
+	 * <li><b>issues</b> - a list of missing code template libraries</li>
+	 * <li><b>libraries</b> - a list of names of code template libraries that are either needed and referenced (green), needed but not yet referenced (red), or
+	 *         referenced but not detected as needed (grey)</li>
+	 * </ul>
+	 * 
 	 * @throws ServiceUnavailableException
 	 */
-	private Collection<String> generateValidatedReferencedLibraryList(ArrayList<String> referencedLibraries, Set<String> usedFunctions)
+	private JSONObject generateValidatedReferencedLibraryList(String channelId, Set<String> usedFunctions)
 			throws ServiceUnavailableException {
 		TreeMap<String, String> libraries = new TreeMap<String, String>();
 		String functionName = null;
@@ -3763,11 +3815,21 @@ logger.debug("################# Building code template library info from scratch
 		String libraryId = null;
 		String libraryName = null;
 		String displayName = null;
+		
+		JSONObject result = new JSONObject();
+		HashSet<String> issues = new HashSet<String>();
 
 		// if no function set has been provided
 		if (usedFunctions == null) {
 			// create a dummy
 			usedFunctions = new TreeSet<String>();
+		}
+		
+		// get the list of referenced libraries
+		ArrayList<String> referencedLibraries = getChannelCodeTemplateLibraryReferences(channelId);
+		if (referencedLibraries == null) {
+			// no libraries have been referenced - create a dummy
+			referencedLibraries = new ArrayList<String>();
 		}
 
 		for (String functionPath : usedFunctions) {
@@ -3783,7 +3845,7 @@ logger.debug("################# Building code template library info from scratch
 				continue;
 			}
 			// and from there get the id of the library to which the functions belongs
-			libraryId = getCodeTemplateToLibrary().get(functionId);
+			libraryId = getCodeTemplateLibraryIdByCodeTemplateId().get(functionId);
 			// if no referenced library could be found for the function
 			if (libraryId == null) {
 				// go on w/ the next one
@@ -3798,6 +3860,9 @@ logger.debug("################# Building code template library info from scratch
 
 			// add the library to the list
 			libraries.putIfAbsent(libraryName, displayName);
+			if(!referencedLibraries.contains(libraryId)) {
+				issues.add(libraryName);
+			}
 		}
 
 		// finally add the libraries that are referenced but not (detected as) needed
@@ -3810,9 +3875,14 @@ logger.debug("################# Building code template library info from scratch
 			}
 		}
 
-		return libraries.values();
+		result.put("libraries", libraries.values());
+		result.put("issues", issues);
+		
+		return result;
 	}
 
+	
+	
 	/**
 	 * Assembles detail information for a channel group
 	 * 
@@ -4031,7 +4101,7 @@ logger.debug("################# Building code template library info from scratch
 		channels = new TreeMap<String, String>();
 
 		// fetch the id of the code template
-		functionId = getCodeTemplateIdForFunctionName(functionName);
+		functionId = getCodeTemplateIdByFunctionName(functionName);
 
 		// if function id is null, is means that the Mirth internal configuration is corrupt (code template is there but not referrenced by a library)
 		if (functionId == null) {
@@ -4040,7 +4110,7 @@ logger.debug("################# Building code template library info from scratch
 		}
 		
 		// detect the channel group to which the channel belongs
-		libraryId = getCodeTemplateToLibrary().get(functionId);
+		libraryId = getCodeTemplateLibraryIdByCodeTemplateId().get(functionId);
 
 		// also get the name of the channel group
 		libraryName = getCodeTemplateLibraryInfoById(libraryId).getString("Display name");
@@ -4662,7 +4732,7 @@ logger.debug("################# Building code template library info from scratch
 						// now find the code template to which the functions belong
 						for (String function : functionReferences) {
 							// get the id of the code template containing the function
-							String codeTemplateId = getCodeTemplateIdForFunctionName(function);
+							String codeTemplateId = getCodeTemplateIdByFunctionName(function);
 							// if the code template is not yet in the references list
 							if (!referencedCodeTemplates.containsKey(codeTemplateId)) {
 								JSONObject codeTemplate = getCodeTemplateInfoById(codeTemplateId);
@@ -4733,15 +4803,15 @@ logger.debug("################# Building code template library info from scratch
 	 * @return The id of the corresponding code template
 	 * @throws ServiceUnavailableException
 	 */
-	private String getCodeTemplateIdForFunctionName(String functionName) throws ServiceUnavailableException {
+	private String getCodeTemplateIdByFunctionName(String functionName) throws ServiceUnavailableException {
 		// if the function name to code template id mapping is not yet loaded
-		if (this.functionNameToCodeTemplateId == null) {
+		if (this.codeTemplateIdByFunctionName == null) {
 			// analyze code template libraries
 			getCodeTemplateLibraryInfo();
 		}
 
 		// and return the wanted mapping
-		return this.functionNameToCodeTemplateId.get(functionName);
+		return this.codeTemplateIdByFunctionName.get(functionName);
 	}
 	
 	/**
@@ -7458,14 +7528,14 @@ logger.debug("################# Building code template library info from scratch
 	 * @return The map containing the mappings
 	 * @throws ServiceUnavailableException
 	 */
-	private HashMap<String, String> getCodeTemplateToLibrary() throws ServiceUnavailableException {
+	private HashMap<String, String> getCodeTemplateLibraryIdByCodeTemplateId() throws ServiceUnavailableException {
 		// if the mapping was not yet created
-		if (this.codeTemplateIdToLibraryId == null) {
+		if (this.codeTemplateLibraryIdByCodeTemplateId == null) {
 			// make sure it exists before returning the reference
 			getCodeTemplateLibraryInfo();
 		}
 
-		return this.codeTemplateIdToLibraryId;
+		return this.codeTemplateLibraryIdByCodeTemplateId;
 	}
 
 	/**
