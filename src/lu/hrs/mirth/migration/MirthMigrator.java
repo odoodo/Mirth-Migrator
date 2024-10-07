@@ -373,6 +373,8 @@ public class MirthMigrator {
 	private HashMap<String, JSONObject> externalResources = null;
 	// stores inter-channel dependencies - ToDo: still has to be implemented
 	private HashMap<String, JSONObject> interChannelDependencies = null;
+	// stores detected code template conflicts
+	private HashMap<String, HashMap<String, Integer>> functionConflicts = null;
 	
 	// stores user sessions
 	private static final Map<String, HashMap<String, Object>> userSessionCache = Collections.synchronizedMap(new HashMap<String, HashMap<String, Object>>());
@@ -1846,6 +1848,7 @@ public class MirthMigrator {
 		this.functionUsesFunctions = null;
 		this.externalResources = null;
 		this.interChannelDependencies = null;
+		this.functionConflicts = null;
 	}
 
 	/**
@@ -1902,7 +1905,7 @@ public class MirthMigrator {
 			this.channelCodeTemplateLibraryReferences = new HashMap<String, ArrayList<String>>();
 			this.codeTemplateLibraryIdByCodeTemplateId = new HashMap<String, String>();
 			this.codeTemplateIdByFunctionName = new HashMap<String, String>();
-
+			
 			// if there are no code template libraries at the Mirth instance
 			if (raw == null) {
 				// no more work has to be done
@@ -1983,16 +1986,16 @@ public class MirthMigrator {
 
 					// now order all templates of the library by name
 					for (Object member : groupMembers) {
+
 						// get the reference to the code template
 						String codeTemplateId = ((JSONObject) member).getString("id");
+						// and also the function name
 						String functionName = getCodeTemplateMetaDataById(codeTemplateId).getString("Function name");
 						// and add it to the ordered map with its name as key
 						groupMemberOrder.put(functionName.toLowerCase(), codeTemplateId);
 						// create mapping from function to library
-						this.codeTemplateLibraryIdByCodeTemplateId.put(codeTemplateId, libraryId);
-						// and also one from function name to code template
-						this.codeTemplateIdByFunctionName.put(functionName, codeTemplateId);
-						
+						this.codeTemplateLibraryIdByCodeTemplateId.put(codeTemplateId, libraryId);					
+					
 						int counter = 2;
 						String functionId = null;
 						while (getCodeTemplateInfo().containsKey(codeTemplateId + "_" + counter)) {
@@ -2004,6 +2007,7 @@ public class MirthMigrator {
 							groupMemberOrder.put(functionName.toLowerCase(), functionId);
 							// create mapping from function to library
 							this.codeTemplateLibraryIdByCodeTemplateId.put(functionId, libraryId);
+
 							// and also one from function name to code template
 							this.codeTemplateIdByFunctionName.put(functionName, codeTemplateId);
 						}
@@ -2027,7 +2031,65 @@ public class MirthMigrator {
 			this.lastUpdate = System.currentTimeMillis();
 		}
 
+
 		return this.codeTemplateLibraryInfo;
+	}
+	
+	/**
+	 * Checks if there is a conflict for this function. The conflict itself can be obtained via getFunctionConflicts()
+	 * @param functionName The name of the function that should be checked
+	 * @param codeTemplateId The id of the code template against which the function should be checked
+	 * @return True, if there is a conflict; false otherwise
+	 * @throws JSONException
+	 * @throws ServiceUnavailableException
+	 */
+	private boolean checkForFunctionConflicts(String functionName, String codeTemplateId) throws JSONException, ServiceUnavailableException {
+
+		// if there is already a link to a code template for this function it means the function is defined multiple times
+		if((this.codeTemplateIdByFunctionName!= null) && (this.codeTemplateIdByFunctionName.containsKey(functionName))) {
+			// as javascript does not support function overloading by defining a function multiple times w/ differing parameter sets, we might have an issue here
+			// first check if there is already a valid container for function conflicts
+			if(this.functionConflicts == null) {
+				// nope, create it
+				this.functionConflicts = new HashMap<String, HashMap<String, Integer>>();
+			}
+			
+			// check if there is not yet a conflict record for this function
+			if(!this.functionConflicts.containsKey(functionName)) {
+				// create a new entry
+				HashMap<String, Integer> newEntry = new HashMap<String, Integer>();
+				// add the initial code template
+				newEntry.put(getCodeTemplateNameById(this.codeTemplateIdByFunctionName.get(functionName)), 1);
+				// add the entry to the conflict list
+				functionConflicts.put(functionName, newEntry);
+			}
+			
+			// get the record for this function
+			HashMap<String, Integer> conflictRecord = functionConflicts.get(functionName);
+			// and also the name of the code template
+			String codeTemplateName = getCodeTemplateNameById(codeTemplateId);
+			
+			// add a detection for this code template (a function might be defined multiple times on the same code template)
+			conflictRecord.put(codeTemplateName, conflictRecord.containsKey(codeTemplateName) ? conflictRecord.get(codeTemplateName) + 1 : 1);
+		    for (Map.Entry<String, Integer> entry : functionConflicts.get(functionName).entrySet()) {
+	            String codeTemplateNameReference = entry.getKey();
+	            Integer amount = entry.getValue();
+	        }
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Provides the conflicts of a function
+	 * @param functionName The name of the function
+	 * @return a HashMap containing the conflicting code templates and the number of times the function is defined in the respective code template
+	 * @throws ServiceUnavailableException
+	 */
+	private HashMap <String, Integer> getFunctionConflicts(String functionName) throws ServiceUnavailableException{
+
+		return (this.functionConflicts != null) ? this.functionConflicts.get(functionName) : null;
 	}
 
 	/**
@@ -2104,6 +2166,7 @@ public class MirthMigrator {
 					generateCodeTemplateMetaData(codeTemplate, functionName);
 					// cache the reference between code template and function
 					this.codeTemplateIdToFunction.get(codeTemplateId).add(functionName);
+					
 					// add metadata for each function within the code template
 					int index = 2;
 					while (functionNameMatcher.find()) {
@@ -2138,6 +2201,7 @@ public class MirthMigrator {
 
 		return this.functionUsesFunctions;
 	}
+
 
 	/**
 	 * Generates metadata for a code template that is no function. It consists of the following information:<br>
@@ -2227,7 +2291,8 @@ public class MirthMigrator {
 		metaData.accumulate("Function name", (functionName != null) ? functionName : metaData.getString("Display name"));
 		// add the id of the code template. If there are more than one functions in a code template, create an artificial id (that allows to
 		// reconstruct the original id)
-		metaData.accumulate("Id", codeTemplate.getString("id") + ((index != null) ? "_" + index.intValue() : ""));
+		String codeTemplateId = codeTemplate.getString("id") + ((index != null) ? "_" + index.intValue() : "");
+		metaData.accumulate("Id", codeTemplateId);
 		// add the version of the code template
 		metaData.accumulate("Version", codeTemplate.get("revision"));
 		// not yet sure for what the item type is needed
@@ -2265,18 +2330,42 @@ public class MirthMigrator {
 				metaData.accumulate("Return value", header.getString("returnValue"));
 			}
 		}
+		boolean isFunction = (functionName != null);
 		// indicate if code template is contains functions
-		metaData.accumulate("Is function", (functionName != null));
+		metaData.accumulate("Is function", isFunction);
 
 		// add the mapping to the metadata HashMap
-		this.codeTemplateInfo.put(metaData.getString("Id"), metaData);
-		// and also add a mapping between function name and code template id
-		if (functionName != null) {
-			getCodeTemplateIdByName().put(metaData.getString("Function name"), metaData.getString("Id"));
-		}
+		this.codeTemplateInfo.put(codeTemplateId, metaData);
+		
 		// as well as the mapping between the template name and the id
 		getCodeTemplateIdByName().put(metaData.getString("Display name"), metaData.getString("Id"));
 		getCodeTemplateNameById().put(metaData.getString("Id"), metaData.getString("Display name"));
+
+		// if it is a function
+		if (isFunction) {
+			// also add a mapping between function name and code template id
+			getCodeTemplateIdByName().put(metaData.getString("Function name"), metaData.getString("Id"));
+
+			// check if the function has conflicts
+			if (checkForFunctionConflicts(functionName, codeTemplateId)) {
+				// it has. Get the list of conflicts for this function 
+				HashMap<String, Integer> allConflicts = getFunctionConflicts(functionName);
+
+				// and assemble the display list of conflicting elements
+				ArrayList<String> conflicts = new ArrayList<String>();
+				for (Map.Entry<String, Integer> entry : allConflicts.entrySet()) {
+					String conflictingCodeTemplate = entry.getKey();
+					Integer numberOfDefinitions = entry.getValue();
+					conflicts.add(conflictingCodeTemplate + ((numberOfDefinitions != 1) ? " (<b>" + numberOfDefinitions + "x</b>)" : ""));
+				}
+
+				// and add it to the meta data information
+				metaData.put("Issues", conflicts);
+			}
+		}
+		
+		// and also one from function name to code template
+		this.codeTemplateIdByFunctionName.put(functionName, metaData.getString("Id"));
 	}
 
 	/**
