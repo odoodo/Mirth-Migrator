@@ -938,7 +938,11 @@ function populateTable(statusCode, displayList, parameters){
 					// add some extra space to vertically align the warning icons (more or less)
 					description = '&nbsp;&nbsp;&nbsp;&nbsp;';
 				}
-				description += '&nbsp;&nbsp;<img src="/img/warning.png" tooltip="The following library reference'+ ((currentItem['Issues'].length == 1) ? ' is missing' : 's are missing') + ':\n<ul><li>'+ currentItem['Issues'].sort().join('</li><li>').replace(/"/g, '&quot;') + '</ul>" id="warningIcon"  class="dontWrap">';
+				if(currentItem['Type'] == 'channel'){
+					description += '&nbsp;&nbsp;<img src="/img/warning.png" tooltip="The following code template library reference'+ ((currentItem['Issues'].length == 1) ? ' is missing' : 's are missing') + ':\n<ul><li>'+ currentItem['Issues'].sort().join('</li><li>').replace(/"/g, '&quot;') + '</ul>" id="warningIcon"  class="dontWrap">';
+				}else{
+					description += '&nbsp;&nbsp;<img src="/img/warning.png" tooltip="The function has been defined multiple times in the following code template'+ ((currentItem['Issues'].length > 1) ? 's' : '') + ':\n<ul><li>'+ currentItem['Issues'].sort().join('</li><li>').replace(/"/g, '&quot;') + '</ul>" id="warningIcon"  class="dontWrap">';					
+				}
 			}
 			// format the current line depending the item type (group or member)
 			if(currentItem['Group']){
