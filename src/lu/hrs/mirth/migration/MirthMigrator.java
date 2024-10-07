@@ -447,7 +447,7 @@ public class MirthMigrator {
 		trustAll();
 
 		// log into the server
-		createServerSession();
+	//	createServerSession();
 		// create a hash value for the relevant server parameters (is intented to be used for smart config reload whenever I get some time)
 		setHash(createHash(String.format("%s_%d_%s_%s", server, port, user, password)));
 	}
@@ -2338,13 +2338,13 @@ public class MirthMigrator {
 		this.codeTemplateInfo.put(codeTemplateId, metaData);
 		
 		// as well as the mapping between the template name and the id
-		getCodeTemplateIdByName().put(metaData.getString("Display name"), metaData.getString("Id"));
-		getCodeTemplateNameById().put(metaData.getString("Id"), metaData.getString("Display name"));
+		getCodeTemplateIdByName().put(metaData.getString("Display name"), codeTemplateId);
+		getCodeTemplateNameById().put(codeTemplateId, metaData.getString("Display name"));
 
 		// if it is a function
 		if (isFunction) {
 			// also add a mapping between function name and code template id
-			getCodeTemplateIdByName().put(metaData.getString("Function name"), metaData.getString("Id"));
+			getCodeTemplateIdByName().put(metaData.getString("Function name"), codeTemplateId);
 
 			// check if the function has conflicts
 			if (checkForFunctionConflicts(functionName, codeTemplateId)) {
@@ -2365,7 +2365,7 @@ public class MirthMigrator {
 		}
 		
 		// and also one from function name to code template
-		this.codeTemplateIdByFunctionName.put(functionName, metaData.getString("Id"));
+		this.codeTemplateIdByFunctionName.put(functionName, codeTemplateId);
 	}
 
 	/**
@@ -3310,7 +3310,6 @@ public class MirthMigrator {
 				// and add the environment to the list
 				result.put(entry);
 			}
-			logger.info("getEnvironments() passed - but should be 500");
 		} catch (IOException e) {
 			return createReturnValue(500, "Unable to load configuration: \n" + e.getMessage());
 		} catch (ConfigurationException e) {
@@ -5950,7 +5949,10 @@ public class MirthMigrator {
 		this.hash = hash;
 	}
 
-	private String getServerSessionCookie() {
+	private String getServerSessionCookie() throws ServiceUnavailableException {
+		if(serverSessionCookie == null) {
+			createServerSession();
+		}
 		return serverSessionCookie;
 	}
 
@@ -7975,8 +7977,9 @@ public class MirthMigrator {
 	 *         <li><b>errorCode</b> - the http error code <i>(only if migration was not successful - not for IO Exception)</i></li>
 	 *         <li><b>errorMessage</b> - a more detailed error message <i>(only if migration was not successful)</i></li>
 	 *         </ul>
+	 * @throws ServiceUnavailableException 
 	 */
-	private JSONObject pushGroupComponent(HttpURLConnection urlConnection, String groups, String componentType) {
+	private JSONObject pushGroupComponent(HttpURLConnection urlConnection, String groups, String componentType) throws ServiceUnavailableException {
 		JSONObject result = new JSONObject();
 		result.put("success", false);
 		result.put("type", componentType);
@@ -8097,8 +8100,9 @@ public class MirthMigrator {
 	 *         <li><b>errorCode</b> - the HTTP error code <i>(only if migration was not successful - not for IO Exception)</i></li>
 	 *         <li><b>errorMessage</b> - a more detailed error message <i>(only if migration was not successful)</i></li> *
 	 *         </ul>
+	 * @throws ServiceUnavailableException 
 	 */
-	private JSONObject pushLeafComponent(HttpURLConnection urlConnection, String component) {
+	private JSONObject pushLeafComponent(HttpURLConnection urlConnection, String component) throws ServiceUnavailableException {
 		JSONObject result = new JSONObject();
 		result.put("success", false);
 
@@ -8194,8 +8198,9 @@ public class MirthMigrator {
 	 *         <li><b>errorCode</b> - the http error code <i>(only if migration was not successful - not for IO Exception)</i></li>
 	 *         <li><b>errorMessage</b> - a more detailed error message <i>(only if migration was not successful)</i></li>
 	 *         </ul>
+	 * @throws ServiceUnavailableException 
 	 */
-	private JSONObject migrateComponent(String component) {
+	private JSONObject migrateComponent(String component) throws ServiceUnavailableException {
 		JSONObject result;
 		boolean override = true;
 		HttpURLConnection urlConnection = null;
