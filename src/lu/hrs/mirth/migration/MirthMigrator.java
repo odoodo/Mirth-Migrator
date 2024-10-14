@@ -88,9 +88,11 @@ public class MirthMigrator {
 	/** The identifier or the component type channel group */
 	public final static String CHANNEL_GROUP = "channelGroup";
 	/** The identifier or the component type channel tags */
-	public final static String CHANNEL_TAGS = "channelTag";
-	/** The identifier or the component type channel prunings */
-	public final static String CHANNEL_PRUNINGS = "channelPruning";
+	public final static String CHANNEL_TAG = "channelTag";
+	/** The identifier or the component type inter-channel dependencies */
+	public final static String INTER_CHANNEL_DEPENDENCY = "interChannelDependency";
+	/** The identifier or the component type channel pruning */
+	public final static String CHANNEL_PRUNING = "channelPruning";
 	/** The identifier or the component type code template library */
 	public final static String CODE_TEMPLATE_LIBRARY = "codeTemplateLibrary";
 	/**
@@ -266,8 +268,18 @@ public class MirthMigrator {
 	/**
 	 * This pattern is used to find a channel tag
 	 */
-	private final static Pattern tagPattern = Pattern.compile("<channelTag[\\s\\S]*?<\\/channelTag>");
+	private final static Pattern channelTagPattern = Pattern.compile("<channelTag[\\s\\S]*?<\\/channelTag>");
 
+	/**
+	 * This pattern is used to find a inter-channel dependency
+	 */
+	private final static Pattern interChannelDependencyPattern = Pattern.compile("<channelDependency[\\s\\S]*?<\\/channelDependency>");
+
+	/**
+	 * This pattern is used to find inter-channel dependency details: group 1 indicates the channel that depends on another channel; group 2 indicates the channel that must be started first 
+	 */
+	private final static Pattern interChannelDependencyDetailsPattern = Pattern.compile("<dependentId>([^<]+)</dependentId>[\\s]*<dependencyId>([^<]+)</dependencyId>");
+	
 	/**
 	 * This pattern is used to find a channel pruning configuration
 	 */
@@ -347,6 +359,10 @@ public class MirthMigrator {
 	private HashMap<String, ArrayList<String>> channelFunctionReferences = null;
 	// a list of functions that are defined within the channel itself
 	private HashMap<String, ArrayList<String>> channelInternalFunctionsByChannelId = null;
+	// a list of functions that are referenced by a channel but of which the definition could not be identified (in case of false positives these have to be added to the filter list)
+	private HashMap<String, TreeSet<String>> unknownChannelFunctions = null;
+	// a list of functions that are referenced by a function but of which the definition could not be identified (in case of false positives these have to be added to the filter list)
+	private HashMap<String, TreeSet<String>> unknownFunctionFunctions = null;
 	// Resolves a channel name to it's id
 	private HashMap<String, String> channelIdbyName = null;
 	// Resolves a channel id to it's name
@@ -446,8 +462,6 @@ public class MirthMigrator {
 		// disable certificate validation
 		trustAll();
 
-		// log into the server
-	//	createServerSession();
 		// create a hash value for the relevant server parameters (is intented to be used for smart config reload whenever I get some time)
 		setHash(createHash(String.format("%s_%d_%s_%s", server, port, user, password)));
 	}
@@ -1849,6 +1863,8 @@ public class MirthMigrator {
 		this.externalResources = null;
 		this.interChannelDependencies = null;
 		this.functionConflicts = null;
+		this.unknownChannelFunctions = null;
+		this.unknownFunctionFunctions = null;
 	}
 
 	/**
@@ -2352,15 +2368,20 @@ public class MirthMigrator {
 				HashMap<String, Integer> allConflicts = getFunctionConflicts(functionName);
 
 				// and assemble the display list of conflicting elements
-				ArrayList<String> conflicts = new ArrayList<String>();
+				ArrayList<String> multipleDefinitions = new ArrayList<String>();
 				for (Map.Entry<String, Integer> entry : allConflicts.entrySet()) {
 					String conflictingCodeTemplate = entry.getKey();
 					Integer numberOfDefinitions = entry.getValue();
-					conflicts.add(conflictingCodeTemplate + ((numberOfDefinitions != 1) ? " (<b>" + numberOfDefinitions + "x</b>)" : ""));
+					multipleDefinitions.add(conflictingCodeTemplate + ((numberOfDefinitions != 1) ? " (<b>" + numberOfDefinitions + "x</b>)" : ""));
 				}
 
-				// and add it to the meta data information
-				metaData.put("Issues", conflicts);
+					// first check if there is already an issue attribute for this channel
+					if (!metaData.has("Issues")) {
+						// if not, create it
+						metaData.put("Issues", new JSONObject());
+					}
+					// add the list of multiple definitions of the same function
+					metaData.getJSONObject("Issues").put("multipleDefinitions", multipleDefinitions);
 			}
 		}
 		
@@ -2939,23 +2960,39 @@ public class MirthMigrator {
 					metaData.accumulate("Is disabled", channelDisabled);
 				}
 				
-				/*** ISSUES  BEGIN **/
+				/** the following code accumulates the detected channel issues */
+				
 				// get a validated list of used functions
-				TreeMap<String, String> validatedFunctions = validatedFunctionReferences(channelId);
+				TreeMap<String, String> validatedFunctions = validateFunctionReferences(channelId);
 
-			
+				// check for unknown functions
+				TreeSet<String> unknownFunctions = getUnknownChannelFunctions(channelId);
+				if (unknownFunctions != null) {
+					// first check if there is already an issue attribute for this channel
+					if (!metaData.has("Issues")) {
+						// if not, create it
+						metaData.put("Issues", new JSONObject());
+					}
+					// add the list of unknown functions
+					metaData.getJSONObject("Issues").put("unknownFunctions", unknownFunctions);
+				}
+
 				// get the validated list of (to be) referenced libraries
 				JSONObject libraryReferences = generateValidatedReferencedLibraryList(channelId,
 						(validatedFunctions != null) ? validatedFunctions.keySet() : null);
 
-				JSONArray issues = libraryReferences.getJSONArray("issues");
+				// check for missing code template library references
+				JSONArray missingReferences = libraryReferences.getJSONArray("issues");
 				// and if there are any
-				if (issues.length() > 0) {
+				if (missingReferences.length() > 0) {
+					// first check if there is already an issue attribute for this channel
+					if (!metaData.has("Issues")) {
+						// if not, create it
+						metaData.put("Issues", new JSONObject());
+					}
 					// add the list of missing libraries
-					metaData.put("Issues", issues);
+					metaData.getJSONObject("Issues").put("missingReferences", missingReferences);
 				}
-				
-				/*** ISSUES  END **/
 				
 				// write the meta data to cache
 				channelInfo.put(metaData.getString("Id"), metaData);
@@ -3652,12 +3689,12 @@ public class MirthMigrator {
 		result.accumulate("Id", channelId);
 
 		// get a validated list of used functions
-		TreeMap<String, String> validatedFunctions = validatedFunctionReferences(channelId);
+		TreeMap<String, String> validatedFunctions = validateFunctionReferences(channelId);
 		if (validatedFunctions != null) {
 			// get a list of functions used by the channel and add it to the metadata
 			result.put("Uses functions", validatedFunctions.values());
 		}
-	
+		
 		// get the validated list of (to be) referenced libraries
 		JSONObject libraryReferences = generateValidatedReferencedLibraryList(channelId,
 				(validatedFunctions != null) ? validatedFunctions.keySet() : null);
@@ -3667,14 +3704,7 @@ public class MirthMigrator {
 			// add the list of referenced channel libraries
 			result.put("Referenced Libraries", libraries);
 		}
-
-		JSONArray issues = libraryReferences.getJSONArray("issues");
-		// and if there are any
-		if (libraries.length() > 0) {
-			// add the list of missing li
-			result.put("Issues", issues);
-		}
-		
+	
 		// now load the channel code
 		String code = getResponseAsXml(connectToRestService("/api/channels?channelId=" + channelId));
 		// decode xml
@@ -3770,7 +3800,7 @@ public class MirthMigrator {
 	 * @throws ServiceUnavailableException
 	 * @throws ConfigurationException 
 	 */
-	private TreeMap<String, String> validatedFunctionReferences(String channelId) throws ServiceUnavailableException, ConfigurationException {
+	private TreeMap<String, String> validateFunctionReferences(String channelId) throws ServiceUnavailableException, ConfigurationException {
 		
 
 		// get the list of referenced libraries
@@ -3786,12 +3816,16 @@ public class MirthMigrator {
 
 		ArrayList<String> channelFunctions = getChannelInternalFunctions(channelId);
 		
-		return validatedFunctionReferences(referencedLibraries, usedFunctions, channelFunctions, null);
+		return validateFunctionReferences(channelId, null, referencedLibraries, usedFunctions, channelFunctions, null);
 	}
 
 	/**
 	 * Checks if functions are properly linked to a channel
 	 * 
+	 * @param channelId
+	 *            The ID of the channel for which the function references should be validated (only needed if functions used by a channel should be validated)
+	 * @param rootFunctionId
+	 *            The ID of the channel for which the function references should be validated  (only needed if functions of a function should be validated)
 	 * @param referencedLibraries
 	 *            A list of IDs of libraries referenced by the channel
 	 * @param referencedFunctions
@@ -3803,7 +3837,7 @@ public class MirthMigrator {
 	 * @return An ordered map of function names and their display strings or null if no or an empty function list was provided
 	 * @throws ServiceUnavailableException
 	 */
-	private TreeMap<String, String> validatedFunctionReferences(ArrayList<String> referencedLibraries, ArrayList<String> referencedFunctions,
+	private TreeMap<String, String> validateFunctionReferences(String channelId, String rootFunctionId, ArrayList<String> referencedLibraries, ArrayList<String> referencedFunctions,
 			ArrayList<String> channelFunctions, String parentFunctionPath) throws ServiceUnavailableException {
 
 		TreeMap<String, String> validatedFunctionReferences;
@@ -3857,6 +3891,8 @@ public class MirthMigrator {
 					// function is neither referenced nor part of any library
 					displayName = String.format("<font color='DarkOrange'><b>%s</b></font> [<font color='Red'><b>unknown source</b></font>]",
 							functionName);
+					// add the function name to the list of unknown functions that have been referenced by the channel
+					addUnknownChannelFunction(channelId, functionName);
 				}
 			}
 			// create the new function path
@@ -3870,13 +3906,48 @@ public class MirthMigrator {
 			if (indirectFunctions != null) {
 				// and add them to the list
 				validatedFunctionReferences
-						.putAll(validatedFunctionReferences(referencedLibraries, indirectFunctions, channelFunctions, functionPath + functionName));
+						.putAll(validateFunctionReferences(channelId, rootFunctionId, referencedLibraries, indirectFunctions, channelFunctions, functionPath + functionName));
 			}
 		}
 
 		return validatedFunctionReferences;
 	}
 
+	/**
+	 * Adds an unknown function that is referenced by a channel to an issue list
+	 * 
+	 * @param channelId
+	 *            The id of the channel for which the function should be added to the issue list
+	 * @param functionName
+	 *            The name of the unknown function reference
+	 */
+	private void addUnknownChannelFunction(String channelId, String functionName) {
+		// if the unknown channel function cache does not yet exist
+		if (this.unknownChannelFunctions == null) {
+			// create it
+			this.unknownChannelFunctions = new HashMap<String, TreeSet<String>>();
+		}
+
+		// if the cache does not contain a record for this channel
+		if (!this.unknownChannelFunctions.containsKey(channelId)) {
+			// create it
+			this.unknownChannelFunctions.put(channelId, new TreeSet<String>());
+		}
+
+		// add the function to the issue list
+		this.unknownChannelFunctions.get(channelId).add(functionName);
+	}
+
+	/**
+	 * Provides a list of unknown functions that are referenced by a channel
+	 * 
+	 * @param channelId
+	 *            The ID of the channel
+	 * @return An ordered list of unknown functions that are referenced by the provided channel or null if there are none
+	 */
+	private TreeSet<String> getUnknownChannelFunctions(String channelId) {
+		return (this.unknownChannelFunctions != null) ? this.unknownChannelFunctions.get(channelId) : null;
+	}
 
 	/**
 	 * Provides a list of libraries that have to be referenced by a channel. Green means the library is properly referenced, red means it is not
@@ -5537,7 +5608,6 @@ public class MirthMigrator {
 	private static HttpURLConnection connectToRestService(String serverName, int Port, String serviceEndpoint) {
 		URL url = null;
 		try {
-			//XXX
 			// assemble the URL
 			url = new URL("https://" + serverName + ":" + Port + serviceEndpoint);
 			// and open the connection
@@ -6194,6 +6264,18 @@ public class MirthMigrator {
 	}
 
 	/**
+	 * Provides a list of all inter-channel dependencies on the server
+	 * 
+	 * @return a list of all inter-channel dependencies
+	 * @throws ServiceUnavailableException
+	 */
+	private String getInterChannelDependencies() throws ServiceUnavailableException {
+		HttpURLConnection urlConnection = connectToRestService("/api/server/channelDependencies");
+
+		return getResponseAsXml(urlConnection);
+	}
+
+	/**
 	 * Provides the channel pruning configuration from the server
 	 * 
 	 * @return a list of all channel pruning settings
@@ -6388,7 +6470,7 @@ public class MirthMigrator {
 		element = new JSONObject();
 		// add the component id
 		element.put("name", "Pruning Information");
-		element.put("type", "channelPruning");
+		element.put("type", CHANNEL_PRUNING);
 		if (!operationSucceeded) {
 			element.put("headers", result.getString("headers"));
 			element.put("configuration", result.getString("configuration"));
@@ -6397,10 +6479,7 @@ public class MirthMigrator {
 		}
 		worklist.put(element);
 		
-		
 		// adjust inter-channel dependencies and migrate them
-		/*
-		// ToDo
 		result = updateInterChannelDependencies(targetSystem, channelIds);
 		// check if operation was successful
 		operationSucceeded = result.getBoolean("success");
@@ -6408,8 +6487,8 @@ public class MirthMigrator {
 		worklist = operationSucceeded ? success : failure;
 		element = new JSONObject();
 		// add the component id
-		element.put("name", "External Resources");
-		element.put("type", "externalResources");
+		element.put("name", "Channel Dependencies");
+		element.put("type", INTER_CHANNEL_DEPENDENCY);
 		if (!operationSucceeded) {
 			element.put("headers", result.getString("headers"));
 			element.put("configuration", result.getString("configuration"));
@@ -6417,7 +6496,7 @@ public class MirthMigrator {
 			element.put("errorMessage", result.getString("errorMessage"));
 		}
 		worklist.put(element);
-		*/
+
 		
 		return overallResult;
 	}
@@ -7349,7 +7428,7 @@ public class MirthMigrator {
 			targetTagList = targetTagList.replaceAll("(\\s*)<string>" + channelId + "<\\/string>", "");
 		}
 		
-		tagMatcher = tagPattern.matcher(targetTagList);
+		tagMatcher = channelTagPattern.matcher(targetTagList);
 		// now loop over all source system tags
 		while (tagMatcher.find()) {
 			// get the code of the tag
@@ -7377,7 +7456,7 @@ public class MirthMigrator {
 		String sourceSystemTags = getChannelTags();
 
 		/** 3.) add the tags of the channels that should be migrated to the target configuration */
-		tagMatcher = tagPattern.matcher(sourceSystemTags);
+		tagMatcher = channelTagPattern.matcher(sourceSystemTags);
 		// loop over all source system tags
 		while (tagMatcher.find()) {
 			// get the code of the next tag
@@ -7481,6 +7560,208 @@ public class MirthMigrator {
 		return result;
 	}
 
+	/**
+	 * Updates the inter-channel dependencies of the channels
+	 * 
+	 * @param targetSystem
+	 *            The client for the target system
+	 * @param channelIds
+	 *            A list of channels that should be migrated to the target system
+	 * @return A JSON object containing the following elements:
+	 *         <ul>
+	 *         <li><b>configuration</b> - the altered inter-channel dependency configuration of the target system that contains the new elements</li>
+	 *         <li><b>componentType</b> - <b>interChannelDependency</b> (the type of any potentially new component that has been added to the target
+	 *         configuration)</li>
+	 *         <li><b>success</b> - true, if update was successful, false otherwise</li>
+	 *         <li><b>headers</b> - all headers of the update request <i>(only if migration was not successful - not for IO Exception)</i></li>
+	 *         <li><b>errorCode</b> - the HTTP error code <i>(only if migration was not successful - not for IO Exception)</i></li>
+	 *         <li><b>errorMessage</b> - a more detailed error message <i>(only if migration was not successful)</i></li>
+	 *         </ul>
+	 * @throws ConfigurationException
+	 * @throws ServiceUnavailableException
+	 */
+	private JSONObject updateInterChannelDependencies(MirthMigrator targetSystem, String[] channelIds) throws ServiceUnavailableException, ConfigurationException
+			 {
+		
+		Matcher idSeparatorMatcher, missingLinkSeparaterMatcher, interChannelDependencyMatcher, interChannelDependencyDetailsMatcher;
+		ArrayList<String> targetInterChannelDependencies = new ArrayList<String>();
+
+		JSONObject result = new JSONObject();
+
+		String interChannelDependencyList = targetSystem.getInterChannelDependencies();
+		result.put("configuration", interChannelDependencyList);
+		result.put("type", "interChannelDependency");
+		result.put("newComponents", new JSONArray());
+		result.put("success", false);
+
+		if ((channelIds == null) || (channelIds.length == 0)) {
+			return result;
+		}
+		
+		/** 1.) remove all inter-channel dependencies that involve the channels that are about to be migrated from the target configuration */
+		
+		interChannelDependencyMatcher = interChannelDependencyPattern.matcher(interChannelDependencyList);
+		// now loop over all inter-channel dependencies of the target system
+		targetInterChannelDependency:
+		while (interChannelDependencyMatcher.find()) {
+			// get the code of the inter-channel dependency
+			String interChannelDependencyCode = interChannelDependencyMatcher.group();
+
+			// check for all provided channel ids if they are part of this dependency
+			for (String channelId : channelIds) {
+				// check if there was a replacement for this id
+				idSeparatorMatcher = idSeparatorPattern.matcher(channelId);
+				// if the original channel id should be replaced in the target system (due to id collision)
+				if(idSeparatorMatcher.find()) {
+					// use the replacement id that should be used in the destination system
+					channelId = idSeparatorMatcher.group(2);
+				}
+				// if the concerned channel is part of this dependency
+				if(interChannelDependencyCode.contains(channelId)) {
+					// no need to check the remaining channel IDs for this dependency. Go on with the next dependency
+					continue targetInterChannelDependency;
+				}
+			}
+
+			// add it to the list of dependencies that should be part of it
+			targetInterChannelDependencies.add(interChannelDependencyCode);	
+		}
+		
+		/** 2.) add the dependencies from the source configuration as long as source and target of the dependency exist (or will exist) in the target system */
+		interChannelDependencyList = getInterChannelDependencies();
+		interChannelDependencyMatcher = interChannelDependencyPattern.matcher(interChannelDependencyList);
+		
+		// now loop over all inter-channel dependencies of the source system
+		sourceInterChannelDependency:
+		while (interChannelDependencyMatcher.find()) {
+			// get the code of the inter-channel dependency
+			String interChannelDependencyCode = interChannelDependencyMatcher.group();
+
+			// now extract the dependent and referenced channel ID from the dependency
+			interChannelDependencyDetailsMatcher = interChannelDependencyDetailsPattern.matcher(interChannelDependencyCode);
+			interChannelDependencyDetailsMatcher.find();
+			String sourceDependentId = interChannelDependencyDetailsMatcher.group(1);
+			String sourceReferencedId = interChannelDependencyDetailsMatcher.group(2);
+			String targetDependentId = null;
+			String targetReferencedId = null;
+
+			// check for all provided channel ids if one of them is part of this dependency
+			for (String channelId : channelIds) {
+				String replacementId = null;
+				// check if there was a replacement for this id
+				idSeparatorMatcher = idSeparatorPattern.matcher(channelId);
+				// if the original channel id should be replaced in the target system (due to id collision)
+				if(idSeparatorMatcher.find()) {
+					// use the replacement id that should be used in the destination system
+					channelId = idSeparatorMatcher.group(1);
+					replacementId = idSeparatorMatcher.group(2);
+				}
+				
+				// if the channel id is not part of this dependency
+				if(!channelId.equals(sourceDependentId) && !channelId.equals(sourceReferencedId)){
+					// go on with the next channel id
+					continue;
+				}
+			
+				//this channel id is involved in an inter-channel dependency. Check if it's counterpart is as well
+				if(channelId.equals(sourceDependentId)) {
+					targetDependentId = (replacementId != null) ? replacementId : channelId;
+				} else {
+					targetReferencedId = (replacementId != null) ? replacementId : channelId;
+				}
+
+				// one side has been found. Now try to identify the other side either in the target system or in the list of IDs that have to be migrated.
+				String counterpart = (targetDependentId == null) ? sourceDependentId : sourceReferencedId;
+				String sourceChannelName = getChannelNameById(counterpart);
+				// if a channel name for the ID was found (should always be the case but you never know...)
+				if(sourceChannelName == null) {
+					// go on w/ the next dependency
+					continue sourceInterChannelDependency;
+				}
+					
+				// check if there is a channel w/ the same name on the target system
+				String targetChannelId = targetSystem.getChannelIdByName(sourceChannelName);
+				// if there is one
+				if(targetChannelId != null) {
+					// set the corresponding id
+					if(targetDependentId == null) {
+						// the dependent ID was missing
+						targetDependentId = targetChannelId;
+					} else {
+						// the referenced ID was missing
+						targetReferencedId = targetChannelId;							
+					}
+				} else {
+					// Plan B: check if one of the IDs of the channels that are about to be migrated is part of the dependencies
+					for (String missingLink : channelIds) {
+						String missingLinkReplacement = null;
+						// check if there was a replacement for this id
+						missingLinkSeparaterMatcher = idSeparatorPattern.matcher(missingLink);
+						// if the original channel id should be replaced in the target system (due to id collision)
+						if(missingLinkSeparaterMatcher.find()) {
+							// use the replacement id that should be used in the destination system
+							missingLink = missingLinkSeparaterMatcher.group(1);
+							missingLinkReplacement = missingLinkSeparaterMatcher.group(2);
+						}
+						
+						// if a match between the mapping and another channel that should be migrated was found
+						if(counterpart.equals(missingLink)) {
+							// set the corresponding id
+							if(targetDependentId == null) {
+								// the dependent ID was missing
+								targetDependentId = (missingLinkReplacement == null) ? missingLink : missingLinkReplacement;
+							} else {
+								// the referenced ID was missing
+								targetReferencedId = (missingLinkReplacement == null) ? missingLink : missingLinkReplacement;							
+							}
+							// no need to check the remaining IDs as a match was found
+							break;
+						}
+					}	
+				}
+				
+				// if no mapping was found
+				if((targetDependentId == null) || (targetReferencedId == null)) {
+					// ignore this mapping and go on w/ the next
+					continue sourceInterChannelDependency;
+				}
+				
+				// replace the IDs
+				interChannelDependencyCode.replaceFirst(sourceDependentId, targetDependentId).replaceFirst(sourceReferencedId, targetReferencedId);
+				// and add the dependency to the target configuration
+				targetInterChannelDependencies.add(interChannelDependencyCode);	
+				// job is done for this inter-channel dependency
+				break;
+			}
+		}
+		
+		/** 3.) assemble the updated  inter-channel dependency configuration for the target system */
+		// create an empty configuration
+		String targetSystemInterChannelDependencies = "<set>\n";
+		// and add all inter-channel dependencies
+		for (String interChannelDependency : targetInterChannelDependencies) {
+			// add the  inter-channel dependency
+			targetSystemInterChannelDependencies += "  " + interChannelDependency + "\n";
+		}
+		// finish configuration
+		targetSystemInterChannelDependencies += "</set>\n";
+
+		// only migrate if there is something to migrate
+		if (targetInterChannelDependencies.size() > 0) {
+			try {
+				// convert pruning settings
+				targetSystemInterChannelDependencies = convert(targetSystemInterChannelDependencies, getMirthVersion(), targetSystem.getMirthVersion());
+				// last but not least actually migrate the altered channel pruning configuration to the target system
+				result = targetSystem.migrateComponent(targetSystemInterChannelDependencies);
+				result.put("configuration", targetSystemInterChannelDependencies);
+			} catch (Exception e) {
+			}
+		}
+
+		return result;
+	}
+
+	
 	/**
 	 * Updates the pruning options of the channels
 	 * 
@@ -7641,8 +7922,8 @@ public class MirthMigrator {
 	 *         <li><b>{@link MirthMigrator#CODE_TEMPLATE Code template}</b></li>
 	 *         <li><b>{@link MirthMigrator#CHANNEL_GROUP Channel group}</b></li>
 	 *         <li><b>{@link MirthMigrator#CODE_TEMPLATE_LIBRARY Code template library}</b></li>
-	 *         <li><b>{@link MirthMigrator#CHANNEL_TAGS Channel tags}</b></li>
-	 *         <li><b>{@link MirthMigrator#CHANNEL_PRUNINGS Channel prunings}</b></li>
+	 *         <li><b>{@link MirthMigrator#CHANNEL_TAG Channel tags}</b></li>
+	 *         <li><b>{@link MirthMigrator#CHANNEL_PRUNING Channel prunings}</b></li>
 	 *         </ul>
 	 *         or <b>null</b> if the component type could not be detected.
 	 */
@@ -7661,15 +7942,17 @@ public class MirthMigrator {
 			// channel group must be checked before channel as it might contain channels
 			componentType = MirthMigrator.CHANNEL_GROUP;
 		} else if (component.contains("<com.mirth.connect.model.ChannelMetadata>")) {
-			componentType = MirthMigrator.CHANNEL_PRUNINGS;
+			componentType = MirthMigrator.CHANNEL_PRUNING;
 		} else if (component.contains("<channel version=")) {
 			componentType = MirthMigrator.CHANNEL;
 		} else if (component.contains("<channelTag>")) {
-			componentType = MirthMigrator.CHANNEL_TAGS;
+			componentType = MirthMigrator.CHANNEL_TAG;
 		} else if (component.contains("<codeTemplate version")) {
 			componentType = MirthMigrator.CODE_TEMPLATE;
+		} else if (component.contains("<channelDependency")) {
+			componentType = MirthMigrator.INTER_CHANNEL_DEPENDENCY;
 		}
-
+		
 		return componentType;
 	}
 
@@ -7737,8 +8020,7 @@ public class MirthMigrator {
 				break;
 
 			default:
-				logger.warn("Unsupported component type \"" + componentType + "\"");
-				return component;
+				break;
 			}
 
 		} else if ((source >= 3.05f) && (target < 3.05f)) {
@@ -7766,10 +8048,8 @@ public class MirthMigrator {
 				component = component.replaceAll("</properties>\n", "");
 				component = component.replaceAll("<list>", "<set>").replaceAll("</list>", "</set>");
 				break;
-
 			default:
-				logger.warn("Unsupported component type \"" + componentType + "\"");
-				return component;
+				break;
 			}
 		}
 
@@ -7831,7 +8111,7 @@ public class MirthMigrator {
 		if ((source < 3.12f) && (target >= 3.12f)) {
 			switch (componentType) {
 			case MirthMigrator.CHANNEL:
-			case MirthMigrator.CHANNEL_PRUNINGS:
+			case MirthMigrator.CHANNEL_PRUNING:
 
 				if (!component.contains("<pruneErroredMessages>")) {
 					component = component.replaceAll("</archiveEnabled>",
@@ -7849,7 +8129,7 @@ public class MirthMigrator {
 		} else if ((source >= 3.12) && (target < 3.12f)) {
 			switch (componentType) {
 			case MirthMigrator.CHANNEL:
-			case MirthMigrator.CHANNEL_PRUNINGS:
+			case MirthMigrator.CHANNEL_PRUNING:
 
 				// remove "pruneErroredMessages" flag from pruning settings
 				component = component.replaceAll("\\s*<pruneErroredMessages>[^<]*</pruneErroredMessages>", "");
@@ -7890,7 +8170,7 @@ public class MirthMigrator {
 			case MirthMigrator.CHANNEL:
 				// remove "useHeadersVariable" and "parametersVariable" from HttpDispatcherProperties
 				component = component.replaceAll("\\s*<useHeadersVariable>[^<]*</useHeadersVariable>", "").replaceAll("\\s*<useParametersVariable>[^<]*</useParametersVariable>", "").replaceAll("\\s*<headersVariable/>", "").replaceAll("\\s*<headersVariable>[^<]*</headersVariable>", "").replaceAll("\\s*<parametersVariable/>", "").replaceAll("\\s*<parametersVariable>[^<]*</parametersVariable>", "");				
-			case MirthMigrator.CHANNEL_PRUNINGS:
+			case MirthMigrator.CHANNEL_PRUNING:
 				// remove "userId" from export meta data
 				component = component.replaceAll("\\s*<userId>[^<]*</userId>", "").replaceAll("\\s*<responseHeadersVariable>[^<]*</responseHeadersVariable>", "").replaceAll("\\s*<useResponseHeadersVariable>[^<]*</useResponseHeadersVariable>", "");
 				break;
@@ -8231,11 +8511,15 @@ public class MirthMigrator {
 			urlConnection = connectToRestService("/api/channelgroups/_bulkUpdate?override=" + override);
 			result = pushGroupComponent(urlConnection, component, componentType);
 			break;
-		case CHANNEL_TAGS:
+		case CHANNEL_TAG:
 			urlConnection = connectToRestService("/api/server/channelTags");
 			result = pushLeafComponent(urlConnection, component);
 			break;
-		case CHANNEL_PRUNINGS:
+		case INTER_CHANNEL_DEPENDENCY:
+			urlConnection = connectToRestService("/api/server/channelDependencies");
+			result = pushLeafComponent(urlConnection, component);
+			break;
+		case CHANNEL_PRUNING:
 			urlConnection = connectToRestService("/api/server/channelMetadata");
 			result = pushLeafComponent(urlConnection, component);
 			break;
