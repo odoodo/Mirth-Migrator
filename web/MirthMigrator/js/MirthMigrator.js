@@ -512,7 +512,7 @@ $(document).ready(function() {
 		$('#compareButton').css('visibility', 'hidden');
 		$('#flexBoxButtons').css('visibility', 'hidden');
 		sourceBoxShown = destBoxShown = false;
-// xxx;	
+	
 		// reload environment list
 		accessResource('/getEnvironments', null, setEnvironments);
 		// and system list
@@ -938,11 +938,27 @@ function populateTable(statusCode, displayList, parameters){
 					// add some extra space to vertically align the warning icons (more or less)
 					description = '&nbsp;&nbsp;&nbsp;&nbsp;';
 				}
+				description += '&nbsp;&nbsp;<img src="/img/warning.png" tooltip="';
+				
+				var issues = currentItem['Issues'];
+				var issueInfo = '';
 				if(currentItem['Type'] == 'channel'){
-					description += '&nbsp;&nbsp;<img src="/img/warning.png" tooltip="The following code template library reference'+ ((currentItem['Issues'].length == 1) ? ' is missing' : 's are missing') + ':\n<ul><li>'+ currentItem['Issues'].sort().join('</li><li>').replace(/"/g, '&quot;') + '</ul>" id="warningIcon"  class="dontWrap">';
+					// add missing code template library references errors					
+					if(issues['missingReferences']){
+						description += 'The following code template library <b>reference'+ ((issues['missingReferences'].length == 1) ? ' is missing' : 's are missing') + '</b>:\n<ul><li>'+ issues['missingReferences'].sort().join('</li><li>').replace(/"/g, '&quot;') + '</ul>\n';
+					}
+					// add missing function definition errors
+					if(issues['unknownFunctions']){
+						description += 'For the following reference' + ((issues['unknownFunctions'].length > 1) ? 's' : '') + ' <b>no function definition</b> was found:\n<ul><li>'+ issues['unknownFunctions'].sort().join('</li><li>').replace(/"/g, '&quot;') + '</ul>\n';
+					}
 				}else{
-					description += '&nbsp;&nbsp;<img src="/img/warning.png" tooltip="The function has been defined multiple times in the following code template'+ ((currentItem['Issues'].length > 1) ? 's' : '') + ':\n<ul><li>'+ currentItem['Issues'].sort().join('</li><li>').replace(/"/g, '&quot;') + '</ul>" id="warningIcon"  class="dontWrap">';					
+					// add functions that have multiple definitions errors
+					if(issues['multipleDefinitions']){
+						description += 'The function has been <b>defined multiple times</b> in the following code template' + ((issues['multipleDefinitions'].length > 1) ? 's' : '') + ':\n<ul><li>'+ issues['multipleDefinitions'].sort().join('</li><li>').replace(/"/g, '&quot;') + '</ul>\n';
+					}
 				}
+				// finalize the description item
+				description += issueInfo + '" id="warningIcon"  class="dontWrap">';
 			}
 			// format the current line depending the item type (group or member)
 			if(currentItem['Group']){
@@ -2237,9 +2253,7 @@ function closeCompare(){
 function unquoteXml(quotedXml){
     quotedXml = quotedXml.replace(/\&lt;/g, "<").replace(/\&gt;/g, ">");
     quotedXml = quotedXml.replace(/li>\r?\n|li>\r/g, "li>");
-    //string = string.replace(/(?:\r\n|\r|\n)/g, '<br/>');
-    //string = string.replace(/\<\/li\>\<br\/\>/g, '</li>');
-    //string = string.replace(/>\r\n/g, ">");
+
     return quotedXml;
 }
 
