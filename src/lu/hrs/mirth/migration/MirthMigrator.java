@@ -212,6 +212,11 @@ public class MirthMigrator {
 	 */
 	private final static Pattern descriptionTagDetectionPattern = Pattern.compile("<description>.+?</description>", Pattern.DOTALL);
 	/**
+	 * Detects all SQL queries w/i CDATA tags
+	 */
+	private final static Pattern cdataDetectionPattern = Pattern.compile("\\&lt;\\!\\[CDATA\\[[^\\]]*\\]\\]\\&gt;", Pattern.DOTALL);
+
+	/**
 	 * Detects all descriptions
 	 */
 	private final static Pattern selectTagDetectionPattern = Pattern.compile("<select>.+?</select>", Pattern.DOTALL);
@@ -3293,6 +3298,8 @@ public class MirthMigrator {
 			result = javascriptStringDetectionPattern.matcher(result).replaceAll("");
 			// remove all "<description>" tags
 			result = descriptionTagDetectionPattern.matcher(result).replaceAll("");
+			// remove all CDATA query definitions
+			result = cdataDetectionPattern.matcher(result).replaceAll("");
 			// and finally remove all "<select>" tags
 			result = selectTagDetectionPattern.matcher(result).replaceAll("");
 		}
