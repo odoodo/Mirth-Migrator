@@ -29,7 +29,8 @@ If a component already exists at the destination instance, conflict handling wil
   <tr><td><b>1.</b></td><td>Place the "web" folder in your "Mirth Connect" folder</td></tr>
   <tr><td><b>2.</b></td><td>Reference MirthMigrator.jar that you find at ./web/MirthMigrator/jar/ as custom resource</td></tr>
   <tr><td><b>3.</b></td><td>Import the MIRTH_MIGRATOR channel and reference the custom resource</td></tr>
-  <tr><td><b>4.</b></td><td>Configure Mirth Migrator</td></tr>
+  <tr><td><b>4.</b></td><td>Deploy the MIRTH_MIGRATOR channel</td></tr>
+  <tr><td><b>5.</b></td><td>Browse to $\textsf{\color{blue}{http://&lt;YourMirthServer&gt;:1339/mirthMigrator}}$</td></tr>
 </table><br/>
 
 When you access Mirth Migrator, it asks you to <b>log in</b>. Simply <b>use your Mirth account</b> of the Mirth instance at which the MIRTH_MIGRATOR channel is running.
