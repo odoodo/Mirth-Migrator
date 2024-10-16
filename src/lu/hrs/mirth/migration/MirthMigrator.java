@@ -197,7 +197,7 @@ public class MirthMigrator {
 	/**
 	 * Detects all instantiations of new objects (like "new String()")
 	 */
-	private final static Pattern instantationDetectionPattern = Pattern.compile("[^\\.\\w\\\\]new\\s([a-zA-Z10-9]+)\\(");
+	private final static Pattern instantationDetectionPattern = Pattern.compile("\\bnew\\s+([a-zA-Z10-9]+)\\s*\\(");
 	/**
 	 * Detects all regular expressions
 	 */
@@ -214,7 +214,7 @@ public class MirthMigrator {
 	/**
 	 * Detects all SQL queries w/i CDATA tags
 	 */
-	private final static Pattern cdataDetectionPattern = Pattern.compile("\\&lt;\\!\\[CDATA\\[[^\\]]*\\]\\]\\&gt;", Pattern.DOTALL);
+	private final static Pattern cdataDetectionPattern = Pattern.compile("\\&lt;\\!\\[CDATA\\[[\\s\\S]*?\\]\\]\\&gt;", Pattern.DOTALL);
 
 	/**
 	 * Detects all SQL queries w/i query tags
