@@ -472,7 +472,7 @@ function addMirthInstance(environments){
 				'<td><input type="text" id="server" value=""></td>' +
 				'<td><input type="number" id="port" value="8443" style="width: 42px"></td>' +
 				'<td><input type="text" id="user" value=""></td>' +
-				'<td><input type="text" id="password" value=""></td>' +
+				'<td><input type="password" id="password" value="">&nbsp;<img src="/img/showPassword.png" alt="show password" id="showPassword" onmouseenter="showPassword(event)" onmouseleave="hidePassword(event)" onclick="copyToClipboard(event)"></img></td>' +
 				'<td>' + createEnvironmentSelect(environments) + '</td>' +
 				'<td class="deleteRow"><img src="/img/removeRow.png" alt="remove row" id="removeConfigRow"></img></td></tr>';
 	$('#mirthInstanceTable').append(newRow);
