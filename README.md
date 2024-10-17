@@ -1,4 +1,4 @@
-<p align="center"><img src="https://github.com/user-attachments/assets/01332ba2-c2b3-47bb-a776-1490b088594c"></p>
+<p align="center"><img src="https://github.com/user-attachments/assets/82862278-9736-470d-9825-d673b1858c83"></p>
 <b>Mirth Migrator</b> automates the transfer of <a href="https://www.nextgen.com/solutions/interoperability/mirth-integration-engine/mirth-connect-downloads" target="_blank">Mirth Enterprise Service Bus</a> channels and code templates from one instance to another.
 <h2>Features</h2>
 <ul>
