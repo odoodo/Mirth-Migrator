@@ -71,10 +71,12 @@ function saveSettings(){
 	var configuration = generateConfiguration();
 	
 	// check if the configuration has changed
-	var configurationHasChanged = (loadedConfigChecksum != calculateChecksum(configuration));
+	var configurationHasChanged = (loadedConfigChecksum != configuration.checksum);
 	// reset the marker
 	loadedConfigChecksum = null;
-
+	// remove the checksum from the configuration
+	delete configuration.checksum;
+		
 	// only if the configuration has changed
 	if(configurationHasChanged){
 		// save the changes and force the active users to restart their session
@@ -174,9 +176,10 @@ function getEnvironmentConfiguration(){
 
 /**
  * Creates a JSON array from the configuration table for the Mirth instances
+ * @param {boolean} encryptPasswords If this flag is set, the passwords will be encrypted
  * @return {Object[]} a JSON array containing Mirth instance definitions
  */
-function getSystemConfiguration(){
+function getSystemConfiguration(encryptPasswords){
 	var systems = [];
 	
 	// read all environment configurations from the table
@@ -192,6 +195,9 @@ function getSystemConfiguration(){
 			var port = +$(this).find('td').eq(3).find('input').val();
 			var user = $(this).find('td').eq(4).find('input').val().trim();
 			var password = $(this).find('td').eq(5).find('input').val().trim();
+			if(encryptPasswords){
+				password = encrypt(password);
+			}
 			var environment = $(this).find('td').eq(6).find('#environment').val();
 
 			// add the Mirth instance to the list
@@ -233,6 +239,10 @@ function getMiscConfiguration(){
 	return {"sessionLifeSpanInMinutes": $('#sessionLifespann').val().trim()};
 }
 
+/**
+ * Generates the configuration
+ * @return The configuration as JSON object
+ */
 function generateConfiguration(){
 	var configuration ={};
 	
@@ -240,7 +250,8 @@ function generateConfiguration(){
 	configuration.sessionLifeSpanInMinutes = +getMiscConfiguration().sessionLifeSpanInMinutes;
 	configuration.system = getSystemConfiguration();
 	configuration.excludeFromFunctionDetection = getFunctionFilterConfiguration();
-	
+	configuration.checksum = calculateChecksum(configuration);
+	configuration.system = getSystemConfiguration(true);
 	return configuration;
 }
 
