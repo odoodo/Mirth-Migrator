@@ -148,6 +148,11 @@ public class MirthMigrator {
 	 * The session cookie of the current session.
 	 */
 	private String serverSessionCookie;
+	
+	/**
+	 * Used to extract passwords from the configuration file
+	 */
+	private final static Pattern passwordPattern = Pattern.compile("(\"password\"\\s*:\\s*\")([^\"]*)(\")");
 
 	/**
 	 * Provides the function names and parameter list in code templates
@@ -523,19 +528,38 @@ public class MirthMigrator {
 	}
 
 	/**
+	 * Encrypts a string
+	 * @param text The text that should be encrypted
+	 * @return The encrypted string
+	 */
+    public static String encrypt(String text) {
+        String key = MirthMigrator.CREDENTIALS_KEY;
+        StringBuilder encrypted = new StringBuilder();
+        
+        for (int i = 0; i < text.length(); i++) {
+        	// encrypt by XORing each character
+            int charCode = (text.charAt(i) ^ key.charAt(i % key.length())) % 255;
+            // add the encrypted char to the final result by assuring 2 characters are used per character
+            encrypted.append(String.format("%02x", charCode));
+        }
+        
+        return encrypted.toString();
+    }
+	
+	/**
 	 * Decrypts a string
 	 * 
-	 * @param credentials
-	 *            The encrypted user credentials
-	 * @return The decrypted credentials
+	 * @param encryptedText
+	 *            The encrypted string
+	 * @return The decrypted string
 	 */
-	private static String decrypt(String credentials) {
+	private static String decrypt(String encryptedText) {
 		String key = MirthMigrator.CREDENTIALS_KEY;
 
 		StringBuilder decrypted = new StringBuilder();
 		// extract hex values
 		Pattern pattern = Pattern.compile(".{1,2}");
-		Matcher matcher = pattern.matcher(credentials);
+		Matcher matcher = pattern.matcher(encryptedText);
 
 		int index = 0;
 		// convert all values
@@ -1014,10 +1038,33 @@ public class MirthMigrator {
 		}
 		
 		// load the configuration file
-		JSONObject configuration = new JSONObject(new String(Files.readAllBytes(configFile.toPath()), StandardCharsets.UTF_8));
+		String rawConfiguration = new String(Files.readAllBytes(configFile.toPath()), StandardCharsets.UTF_8);
+
+		Matcher passwordMatcher = passwordPattern.matcher(rawConfiguration);
+		StringBuffer decryptedConfig = new StringBuffer();
+
+		// make sure that all passwords are decrypted in memory
+        while (passwordMatcher.find()) {
+            String decryptedPassword = passwordMatcher.group(2); // Extract the password
+            
+			try {
+				// try to decrypt the password
+				decryptedPassword = decrypt(decryptedPassword);
+			} catch (Exception e) {
+				// decryption failed so it seems to be a plain password already
+				logger.warn("Detected unencrypted password!");
+			}
+
+            // replace the plain-text password with the encrypted password
+            passwordMatcher.appendReplacement(decryptedConfig, passwordMatcher.group(1) + decryptedPassword + passwordMatcher.group(3));
+        }
+        // and add the remaining part
+        passwordMatcher.appendTail(decryptedConfig);
+        
+        // parse the JSON file
+		JSONObject configuration = new JSONObject(decryptedConfig.toString());
 		// cache the configuration
 		MirthMigrator.configuration = configuration;
-
 
 		/* 1. Parse the environment configuration */
 
@@ -3489,7 +3536,6 @@ public class MirthMigrator {
 				Files.write(configLocation, config.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 				
 				logger.debug("Successfully wrote configuration to \"" + configLocation.toAbsolutePath() + "\"");
-				System.out.println("Successfully wrote configuration to \"" + configLocation.toAbsolutePath() + "\"");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -8561,6 +8607,7 @@ public class MirthMigrator {
 	}
 	
 	public static void main(String[] args) throws Exception {
+		
 		//System.out.println("Writing configuration:");
 
 	//	boolean result = setConfiguration(getConfiguration());
