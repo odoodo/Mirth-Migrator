@@ -1,0 +1,86 @@
+{
+	"environment": [
+		{
+			"color": "#ff0000",
+			"name": "Production",
+			"id": "6a97107e-db51-4b9a-a422-62a20c870c62",
+			"position": 1
+		},
+		{
+			"color": "#ffa500",
+			"name": "Test",
+			"id": "e6eb177e-a787-4cd3-8a1b-a1f7ab3076e3",
+			"position": 2
+		},
+		{
+			"color": "#32cd32",
+			"name": "Development",
+			"id": "3f36b282-f1a1-4fa0-acbf-45853aa40af5",
+			"position": 3
+		}
+	],
+	"sessionLifeSpanInMinutes": 20,
+	"system": [
+		{
+			"server": "",
+			"environment": "6a97107e-db51-4b9a-a422-62a20c870c62",
+			"password": "",
+			"port": 8443,
+			"name": "Production Server 1",
+			"description": "This is the critical place",
+			"user": ""
+		},
+		{
+			"server": "",
+			"environment": "e6eb177e-a787-4cd3-8a1b-a1f7ab3076e3",
+			"password": "",
+			"port": 8443,
+			"name": "Test Server 1",
+			"description": "New components are tested here before put in production",
+			"user": ""
+		},
+		{
+			"server": "",
+			"environment": "3f36b282-f1a1-4fa0-acbf-45853aa40af5",
+			"password": "",
+			"port": 8443,
+			"name": "Development Server 1",
+			"description": "This is where the magic takes place",
+			"user": ""
+		}
+	],
+	"excludeFromFunctionDetection": [
+		"addAttachment",
+		"c",
+		"catch",
+		"cfg",
+		"co",
+		"counter",
+		"createSegment",
+		"createSegmentAfter",
+		"Date",
+		"delete",
+		"each",
+		"encodeURIComponent",
+		"eval",
+		"for",
+		"function",
+		"g",
+		"gc",
+		"getAttachments",
+		"if",
+		"importPackage",
+		"isFinite",
+		"isNaN",
+		"Iterator",
+		"parseFloat",
+		"parseInt",
+		"r",
+		"replace",
+		"s",
+		"String",
+		"switch",
+		"throw",
+		"while"
+	]
+}
