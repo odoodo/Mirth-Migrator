@@ -215,7 +215,19 @@ public class MirthMigrator {
 	/**
 	 * Detects all descriptions
 	 */
-	private final static Pattern descriptionTagDetectionPattern = Pattern.compile("<description>.+?</description>", Pattern.DOTALL);
+	private final static Pattern descriptionTagDetectionPattern = Pattern.compile("<description>.*?</description>", Pattern.DOTALL);
+	/**
+	 * Detects all subject tags
+	 */
+	private final static Pattern subjectTagDetectionPattern = Pattern.compile("<subject>.*?</subject>", Pattern.DOTALL);
+	/**
+	 * Detects all name tags
+	 */
+	private final static Pattern nameTagDetectionPattern = Pattern.compile("<name>.*?</name>", Pattern.DOTALL);
+	/**
+	 * Detects all empty tags (often used for encapsulating SQL)
+	 */
+	private final static Pattern emptyTagDetectionPattern = Pattern.compile("\\&lt;\\&gt;.*?\\&lt;/\\&gt;", Pattern.DOTALL);
 	/**
 	 * Detects all SQL queries w/i CDATA tags
 	 */
@@ -229,7 +241,7 @@ public class MirthMigrator {
 	/**
 	 * Detects all descriptions
 	 */
-	private final static Pattern selectTagDetectionPattern = Pattern.compile("<select>.+?</select>", Pattern.DOTALL);
+	private final static Pattern selectTagDetectionPattern = Pattern.compile("<select>.*?</select>", Pattern.DOTALL);
 	/**
 	 * This pattern is used to extract the JavaScript Doc header (group 1) as well as the name (group 2) from a function
 	 */
@@ -3221,6 +3233,7 @@ public class MirthMigrator {
 			}
 			// extract the channel id from the xml
 			channelId = idMatcher.group(1);
+			
 			// prepare channel definition for function detection
 			channelDefinition = prepareForFunctionParsing(channelDefinition);
 			
@@ -3335,14 +3348,14 @@ public class MirthMigrator {
 	 */
 	private String prepareForFunctionParsing(String code) {
 		String result = null;
+		
 		if ((code != null) && (code.length() > 0)) {
 			// remove all base64 blocks (it will otherwise bust the stack)
 			result = base64DetectionPattern.matcher(code).replaceAll("$1");
+			// remove all comments
 			result = commentDetectionPattern.matcher(code).replaceAll("");
 			// and also remove all object instantiations (like "new String()")
 			result = instantationDetectionPattern.matcher(result).replaceAll("");
-			// remove regular expressions - deactivated as it might case stack overflow (regex needs revision)
-			//result = regexDetectionPattern.matcher(result).replaceAll("");
 			// remove all java strings
 			// IMPORTANT: This must be done before filtering JavaScript strings as apostrophes are also used in text
 			result = javaStringDetectionPattern.matcher(result).replaceAll("");
@@ -3350,10 +3363,16 @@ public class MirthMigrator {
 			result = javascriptStringDetectionPattern.matcher(result).replaceAll("");
 			// remove all "<description>" tags
 			result = descriptionTagDetectionPattern.matcher(result).replaceAll("");
+			// remove all "<name>" tags
+			result = nameTagDetectionPattern.matcher(result).replaceAll("");			
+			// remove all "<subject>" tags
+			result = subjectTagDetectionPattern.matcher(result).replaceAll("");			
 			// remove all CDATA query definitions
 			result = cdataDetectionPattern.matcher(result).replaceAll("");
 			// remove all sql queries that are defined in query tags
 			result = queryDetectionPattern.matcher(result).replaceAll("");
+			// remove all sql queries that are defined in empty tags
+			result = emptyTagDetectionPattern.matcher(result).replaceAll("");
 			// and finally remove all "<select>" tags
 			result = selectTagDetectionPattern.matcher(result).replaceAll("");
 		}
