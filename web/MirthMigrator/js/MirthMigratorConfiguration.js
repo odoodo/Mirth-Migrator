@@ -355,12 +355,15 @@ function setMiscConfiguration(sessionLifeSpanInMinutes){
 }
 
 function setFunctionFilterConfiguration(functionFilters){
-		// create the section content
+
+	// create the section content
 	var functionFilterConfiguration = 	'<h2><i><u>Function Filters</u></i></h2><table id="functionFilterContainer">\n' + 
 										'<tr><th><input type="text" id="filter" onkeydown="handleKeyDownEvent(event)" oninput="filterFunctionFilters(this.value)">&nbsp;<button id="addFilterButton" type="button" onclick="addFilter()">Add</button></th></tr>\n' + 
 										'<tr><td><hr></td></tr>' +
 										'<tr><td id="functionFilterWrapper"><table id="functionFiltersTable">\n';
-
+	// order filter names descending								
+	functionFilters.sort(function (a, b) {return a.toLowerCase().localeCompare(b.toLowerCase());});
+	// and show them in the table
 	functionFilters.forEach(function(functionName) { 
 		functionFilterConfiguration += '<tr><td filter="' + functionName.toLowerCase() + '">' + functionName + '</td><td class="deleteRow"><img src="/img/removeRow.png" alt="remove row" id="removeConfigRow"></img></td></tr>'
 	});
