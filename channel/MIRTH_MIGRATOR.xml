@@ -9,7 +9,7 @@ Please check https://github.com/odoodo/Mirth-Migrator for further details.&#xd;
 Version:&#xd;
 20240822: added support for configuration frontend&#xd;
 20240521: initial version</description>
-  <revision>416</revision>
+  <revision>475</revision>
   <sourceConnector version="3.7.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -31,12 +31,12 @@ Version:&#xd;
         <processingThreads>20</processingThreads>
         <resourceIds class="linked-hash-map">
           <entry>
-            <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
-            <string>MirthMigrator</string>
-          </entry>
-          <entry>
             <string>Default Resource</string>
             <string>[Default Resource]</string>
+          </entry>
+          <entry>
+            <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+            <string>Mirth Migrator</string>
           </entry>
         </resourceIds>
         <queueBufferSize>1000</queueBufferSize>
@@ -302,12 +302,12 @@ return true;</script>
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
             <entry>
-              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
-              <string>MirthMigrator</string>
-            </entry>
-            <entry>
               <string>Default Resource</string>
               <string>[Default Resource]</string>
+            </entry>
+            <entry>
+              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+              <string>Mirth Migrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -330,6 +330,9 @@ return true;</script>
 
 // get hold of the target system
 var mirthClient = MirthMigrator.getClient(msg[&apos;system&apos;]);
+if(!mirthClient){
+	logger.error(&apos;Mirth client for &quot;&apos; + msg[&apos;system&apos;] + &apos;&quot; is null&apos;);	
+}
 
 // obtain the meta data of all components of the given type
 var metaData = mirthClient.getMetaData(msg[&apos;componentType&apos;], msg[&apos;refresh&apos;] || false);
@@ -405,12 +408,12 @@ IjogdHJ1ZQp9</inboundTemplate>
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
             <entry>
-              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
-              <string>MirthMigrator</string>
-            </entry>
-            <entry>
               <string>Default Resource</string>
               <string>[Default Resource]</string>
+            </entry>
+            <entry>
+              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+              <string>Mirth Migrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -503,12 +506,12 @@ Igp9</inboundTemplate>
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
             <entry>
-              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
-              <string>MirthMigrator</string>
-            </entry>
-            <entry>
               <string>Default Resource</string>
               <string>[Default Resource]</string>
+            </entry>
+            <entry>
+              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+              <string>Mirth Migrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -601,12 +604,12 @@ OWRhIiwKCQkiOGY3ODA3Y2UtM2NjZS00ZWZjLWE4ZjMtMzlhZWNmOTI1OWRiIgoJXQp9</inboundTem
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
             <entry>
-              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
-              <string>MirthMigrator</string>
-            </entry>
-            <entry>
               <string>Default Resource</string>
               <string>[Default Resource]</string>
+            </entry>
+            <entry>
+              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+              <string>Mirth Migrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -700,12 +703,12 @@ responseMap.put(&apos;response&apos;, JSON.stringify(conflictingComponents.paylo
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
             <entry>
-              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
-              <string>MirthMigrator</string>
-            </entry>
-            <entry>
               <string>Default Resource</string>
               <string>[Default Resource]</string>
+            </entry>
+            <entry>
+              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+              <string>Mirth Migrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -800,12 +803,12 @@ OC1iYTYyLTFhZTIzMTIzYjBiMyIsCgkJCSJ0eXBlIjogImNvZGVUZW1wbGF0ZSIKCQl9Cn0=</inboun
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
             <entry>
-              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
-              <string>MirthMigrator</string>
-            </entry>
-            <entry>
               <string>Default Resource</string>
               <string>[Default Resource]</string>
+            </entry>
+            <entry>
+              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+              <string>Mirth Migrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -905,12 +908,12 @@ OC1iYTYyLTFhZTIzMTIzYjBiMyIsCgkJCSJ0eXBlIjogImNvZGVUZW1wbGF0ZSIKCQl9Cn0=</inboun
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
             <entry>
-              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
-              <string>MirthMigrator</string>
-            </entry>
-            <entry>
               <string>Default Resource</string>
               <string>[Default Resource]</string>
+            </entry>
+            <entry>
+              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+              <string>Mirth Migrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -930,6 +933,9 @@ Migrates all compentents (channels or code templates) as well as their container
 
 // get hold of the required mirth client
 var mirthClient = MirthMigrator.getClient(msg[&apos;sourceSystem&apos;]);
+if(!mirthClient){
+	logger.error(&apos;Mirth client for &quot;&apos; + msg[&apos;sourceSystem&apos;] + &apos;&quot; is null&apos;);	
+}
 
 // migrate the components
 var migrationReport = mirthClient.migrateComponents(msg[&apos;destinationSystem&apos;], msg[&apos;component&apos;]);
@@ -1006,12 +1012,12 @@ YjBlNi1lMjI2OTliZmEzYTMiLAoJCQkidHlwZSI6ICJjb2RlVGVtcGxhdGUiCgkJfQoJXQp9</inboun
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
             <entry>
-              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
-              <string>MirthMigrator</string>
-            </entry>
-            <entry>
               <string>Default Resource</string>
               <string>[Default Resource]</string>
+            </entry>
+            <entry>
+              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+              <string>Mirth Migrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -1101,12 +1107,12 @@ responseMap.put(&apos;response&apos;, JSON.stringify(environments.payload));</sc
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
             <entry>
-              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
-              <string>MirthMigrator</string>
-            </entry>
-            <entry>
               <string>Default Resource</string>
               <string>[Default Resource]</string>
+            </entry>
+            <entry>
+              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+              <string>Mirth Migrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -1195,12 +1201,12 @@ responseMap.put(&apos;response&apos;, JSON.stringify(systems.payload));</script>
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
             <entry>
-              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
-              <string>MirthMigrator</string>
-            </entry>
-            <entry>
               <string>Default Resource</string>
               <string>[Default Resource]</string>
+            </entry>
+            <entry>
+              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+              <string>Mirth Migrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -1290,12 +1296,12 @@ responseMap.put(&apos;response&apos;, JSON.stringify(configuration.payload));</s
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
             <entry>
-              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
-              <string>MirthMigrator</string>
-            </entry>
-            <entry>
               <string>Default Resource</string>
               <string>[Default Resource]</string>
+            </entry>
+            <entry>
+              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+              <string>Mirth Migrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -1383,12 +1389,12 @@ responseMap.put(&apos;response&apos;, &apos;{}&apos;);</script>
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
             <entry>
-              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
-              <string>MirthMigrator</string>
-            </entry>
-            <entry>
               <string>Default Resource</string>
               <string>[Default Resource]</string>
+            </entry>
+            <entry>
+              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+              <string>Mirth Migrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -1401,6 +1407,7 @@ Provides a list of code templates that are referenced by a provided list of chan
       <transformer version="3.7.1">
         <elements>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="3.7.1">
+            <name>Get a list of code templates that are referenced by the component that is about to be migrated</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <script>const MirthMigrator = Packages.lu.hrs.mirth.migration.MirthMigrator;
@@ -1478,12 +1485,12 @@ responseMap.put(&apos;response&apos;, JSON.stringify(referencedCodeTemplate.payl
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
             <entry>
-              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
-              <string>MirthMigrator</string>
-            </entry>
-            <entry>
               <string>Default Resource</string>
               <string>[Default Resource]</string>
+            </entry>
+            <entry>
+              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+              <string>Mirth Migrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -1556,19 +1563,66 @@ responseMap.put(&apos;response&apos;, JSON.stringify({&apos;version&apos;: versi
   </destinationConnectors>
   <preprocessingScript>return message || &apos;{}&apos;;</preprocessingScript>
   <postprocessingScript>return;</postprocessingScript>
-  <deployScript>// get Mirth Migrator version
-var mirthMigratorVersion = Packages.lu.hrs.mirth.migration.MirthMigrator.getVersion();
-// and also Rhino version
+  <deployScript>const rootPath =  new java.io.File(&apos;&apos;).getAbsolutePath();
+
+try {
+	// get the Mirth Migrator version
+	var mirthMigratorVersion = Packages.lu.hrs.mirth.migration.MirthMigrator.getVersion();
+} catch (err) {
+	// The external resource was not found
+	// most probably there are configuration issues. Try to narrow down the reason and guide the user
+
+	// 1.) Check if the Mirth Migrator resources have been copied to the right location
+	var mirthMigratorFolder = new java.io.File(&apos;web&apos;);
+	
+	if(!mirthMigratorFolder.exists() || !mirthMigratorFolder.isDirectory()){	
+		logger.error(&apos;\n\nThe Mirth Migrator folder was not found! \nPlease place the folder &quot;web&quot; at &quot;&apos; + rootPath + &apos;&quot;.&apos;);
+		ChannelUtil.undeployChannel(channelId);
+		return;
+	} 
+
+	// 2.) check if the Mirth Migrator library is at the right spot
+	var jarFile = new java.io.File(&apos;web/MirthMigrator/jar/MirthMigrator.jar&apos;);
+	if(!jarFile.exists() || jarFile.isDirectory()){	
+		logger.error(&apos;\n\nThe Mirth Migrator library was not found! \nThe library must be located at &quot;&apos; + jarFile.getAbsolutePath() + &apos;&quot;.&apos;);
+		ChannelUtil.undeployChannel(channelId);
+		return;
+	}
+
+	// 3.) Check if the reason is a missing resource reference for this channel
+	try {
+		var jarUrl = jarFile.toURI().toURL();
+		var urls = java.lang.reflect.Array.newInstance(java.net.URL, 1);
+		urls[0] = jarUrl;
+		var parentClassLoader = java.lang.Thread.currentThread().getContextClassLoader();
+		var dontDoThisAtHome = new java.net.URLClassLoader(urls, parentClassLoader);
+		
+		const mirthMigrator = dontDoThisAtHome.loadClass(&quot;lu.hrs.mirth.migration.MirthMigrator&quot;);
+		var mirthMigratorVersion= mirthMigrator.getMethod(&quot;getVersion&quot;).invoke(null);
+		
+		logger.error(&apos;\n\nMirth Migrator v&apos; + mirthMigratorVersion + &apos; was found at the right spot. \nHowever it seems like MirthMigrator.jar was not defined as a resource for channel &apos; + channelName + &apos;. \n\nPlease define the library as a resource via Mirth Administrator: Settings/Resources \nand reference it in the channel (at Summary/Set Dependencies/Library Resources)!&apos;);
+		ChannelUtil.undeployChannel(channelId);  
+	} catch (err) {
+		// 4.) Not able to specify the error reason. Let&apos;s assume the file is corrupt.
+		logger.error(&apos;\n\nThe Mirth Migrator library &quot;&apos; + jarFile.getAbsolutePath() + &apos;&quot; seems to be corrupt. \nPlease redownload from https://github.com/odoodo/Mirth-Migrator/releases&apos;);
+		ChannelUtil.undeployChannel(channelId);  		
+	}
+	
+	return;
+}
+
+// get the Rhino version
 var rhinoVersion = org.mozilla.javascript.Context.getCurrentContext().getImplementationVersion();
 // and indicate it in the logs
 logger.info(&apos;Mirth Migrator v&apos; + mirthMigratorVersion + &apos; under JavaScript version: &apos; + rhinoVersion + &apos; started&apos;);
+
 
 return;</deployScript>
   <undeployScript>
 return;</undeployScript>
   <properties version="3.7.1">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
-    <messageStorageMode>PRODUCTION</messageStorageMode>
+    <messageStorageMode>METADATA</messageStorageMode>
     <encryptData>false</encryptData>
     <removeContentOnCompletion>false</removeContentOnCompletion>
     <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
@@ -1593,12 +1647,12 @@ return;</undeployScript>
     </attachmentProperties>
     <resourceIds class="linked-hash-map">
       <entry>
-        <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
-        <string>MirthMigrator</string>
-      </entry>
-      <entry>
         <string>Default Resource</string>
         <string>[Default Resource]</string>
+      </entry>
+      <entry>
+        <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+        <string>Mirth Migrator</string>
       </entry>
     </resourceIds>
   </properties>
@@ -1606,12 +1660,12 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1725016943132</time>
+        <time>1729691147028</time>
         <timezone>Europe/Berlin</timezone>
       </lastModified>
       <pruningSettings>
         <pruneMetaDataDays>1</pruneMetaDataDays>
-        <archiveEnabled>true</archiveEnabled>
+        <archiveEnabled>false</archiveEnabled>
       </pruningSettings>
     </metadata>
     <channelTags>
