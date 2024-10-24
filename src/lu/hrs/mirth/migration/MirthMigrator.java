@@ -79,7 +79,7 @@ import org.slf4j.LoggerFactory;
  */
 public class MirthMigrator {
 
-	private final static String version = "1.0 beta 5";
+	private final static String version = "1.0";
 
 	/** The identifier or the component type channel */
 	public final static String CHANNEL = "channel";
@@ -442,7 +442,7 @@ public class MirthMigrator {
 				logger.MirthMigrator.name = lu.hrs.mirth.migration.MirthMigrator
 				logger.MirthMigrator.level = DEBUG
 		*/
-		MirthMigrator.logger.info("Mirth Migrator version " + getVersion() + " activated");
+//		MirthMigrator.logger.info("Mirth Migrator version " + getVersion() + " activated");
 
 
 
@@ -3213,7 +3213,7 @@ public class MirthMigrator {
 	 * @throws ConfigurationException
 	 */
 	private synchronized void buildUpCodeTemplateRelationships(String xml) throws ConfigurationException {
-
+// xxx
 		String channelDefinition = null;
 		Matcher channelMatcher, idMatcher, functionReferenceMatcher, functionNameMatcher;
 		TreeSet<String> detectedFunctions = null;
@@ -3298,6 +3298,12 @@ public class MirthMigrator {
 				functionName += "()";
 				// add the function to the result set
 				detectedFunctions.add(functionName);
+				// as there seem to be concurrency situations where the container is removed during it's filling 
+				if(this.channelReferencesToFunction == null) {
+					// add this for security reasons
+					this.channelReferencesToFunction = new HashMap<String, TreeSet<String>>();
+					logger.warn("There seems to be a concurrency issue. Container channelReferencesToFunction was deleted when it was about to be filled.");
+				}
 				// if there is not yet a container for this function
 				if (!this.channelReferencesToFunction.containsKey(functionName)) {
 					// create one - that way a bidirectional mapping is possible (allows to show which channel is using this function)
