@@ -434,6 +434,20 @@ table.parameters tr:last-child {
     background-color: rgba(0,0,0,0.5);
 }
 
+.configInfo{
+	position: absolute;
+	top: 92px;
+	left: 170px;
+	padding: 10px;
+	background-color: #f4d03f;
+	border: 2px solid #333;
+	border-radius: 15px;
+	box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	color: #333;
+	display:none;
+}
 #HtmlToolTip{
 	max-width: 900px;
 	z-index:10; 
