@@ -209,7 +209,7 @@ function populateComponentTables(refresh) {
  * @param {*} command - the path of the webservice that should be called
  * @param {*} payload The payload that should be transferred to the server
  * @param {*} action The function that should be called w/ the response from the server
- * @param {*} parameters A json-object containing additional paramters that should be passed to the function defined under action
+ * @param {*} parameters A json-object containing additional parameters that should be passed to the function defined under action
  * @param {*} refreshCache If set, the component metadata at server-side will be reloaded
  */ 
 function accessResource(command, payload, action, parameters, refreshCache){
@@ -316,8 +316,8 @@ function accessResource(command, payload, action, parameters, refreshCache){
 				} else if(statusCode == 500){
 					// no config file
 					if(!configSectionActive){
-						// there is not yet a configuration file. Thus force configurator to appear
-						loadSettings();
+						// there is not yet a configuration file. Thus force configurator to appear. Open the Mirth Instances tab
+						loadSettings('systemConfiguration', true);
 					}
 					return;
 				}

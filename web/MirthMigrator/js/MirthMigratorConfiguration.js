@@ -6,10 +6,14 @@
 						'	<div class="closeSettingsIcon" onclick="saveSettings();"></div>\n' +
 						'	<h1>&nbsp;&nbsp;Mirth Migrator Configuration</h1>\n' +
 						'	<div class="tab">\n' +
-						'		<button id="initialTab" class="tablinks" onclick="showConfigTab(event, \'environmentConfiguration\')" active>Environments</button>\n' +
-						'		<button class="tablinks" onclick="showConfigTab(event, \'systemConfiguration\')">Mirth Instances</button>\n' +
-						'		<button class="tablinks" onclick="showConfigTab(event, \'functionFilterConfiguration\')">Filters</button>\n' +
-						'		<button class="tablinks" onclick="showConfigTab(event, \'miscConfiguration\')">Misc</button>\n' +
+						'		<button class="tablinks" id="environmentConfigurationTab" onclick="showConfigTab(\'environmentConfiguration\')" active>Environments</button>\n' +
+						'		<button class="tablinks" id="systemConfigurationTab" onclick="showConfigTab(\'systemConfiguration\')">Mirth Instances</button>\n' +
+						'		<button class="tablinks" id="functionFilterConfigurationTab" onclick="showConfigTab(\'functionFilterConfiguration\')">Filters</button>\n' +
+						'		<button class="tablinks" id="miscConfigurationTab" onclick="showConfigTab(\'miscConfiguration\')">Misc</button>\n' +
+						'	</div>\n' +
+						'	<div id="intitialConfigInfo" class="configInfo">\n' +
+						'<b>Please configure the information for all Mirth servers you want to access.</b> Every Mirth server needs a user account that can be used by Mirth Administrator.<br/>' + 
+						'It is recommended to create an account like "service" or "MirthMigrator" that is easily identifiable as system account. <b>Press the close button <img src="/img/closeSettings.png" width="12"> in the upper right corner when done.</b>' +
 						'	</div>\n' +
 						'	<div id="environmentConfiguration" class="configurationTab">\n' +
 						'	</div>\n' +
@@ -55,11 +59,23 @@ function calculateChecksum(jsonObject) {
     return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 };
 
-function loadSettings(){
+function loadSettings(tab, initial){
 	// indicate that the config section is currently active
 	configSectionActive = true;
+	parameters = (tab || initial) ? {} : null;
+	// if a tab was specified
+	if(tab){
+		// make sure to open this tab
+		parameters.tab = tab;
+	}
+	// if it is the initial configuration
+	if(initial){
+		// display a support message
+		parameters.displayMessage = true;
+	}
+
 	// load configuration and open config section
-	accessResource('/getConfiguration', null, openSettings);
+	accessResource('/getConfiguration', null, openSettings, parameters);
 }
 
 /**
@@ -89,6 +105,7 @@ function saveSettings(){
 
 function closeSettings(statusCode, returnValue, reloadSystemList){
 	$("#configurationSection").css('display','none');
+	$('#intitialConfigInfo').css('display', 'none');
 	
 	// remove active flag from all tabs
 	$('.tablinks').each(function() {
@@ -231,7 +248,7 @@ function getFunctionFilterConfiguration(){
 }
 
 /**
- * Creates a JSON array from the paramters of the miscellaneous section
+ * Creates a JSON array from the parameters of the miscellaneous section
  * @return {Object} A json object containing the content of the misc section
  */
 function getMiscConfiguration(){
@@ -443,7 +460,7 @@ function addFilter(){
 	filterFunctionFilters('');
 }
 
-function openSettings(requestStatus, configuration){
+function openSettings(requestStatus, configuration, parameters){
 	
 	// indicate that the config section is currently active
 	configSectionActive = true;
@@ -458,7 +475,7 @@ function openSettings(requestStatus, configuration){
 	$("#functionFilterConfiguration").css('display','block');
 
 	// and activate the default tab
-	$('#initialTab').addClass("active");
+	$('#environmentConfigurationTab').addClass("active");
 	
 	/** Environment section **/
 	setEnvironmentConfiguration(configuration.environment);
@@ -471,6 +488,12 @@ function openSettings(requestStatus, configuration){
 	
 	/** Misc section **/
 	setMiscConfiguration(configuration.sessionLifeSpanInMinutes);
+
+	// if a specific tab should be initially shown
+	if(parameters){
+		// activate it
+		showConfigTab(parameters.tab, parameters.displayMessage);
+	}
 }
 
 function addEnvironment(){
@@ -495,7 +518,7 @@ function addMirthInstance(environments){
 	activateSelectionColorChanger();
 }
 
-function showConfigTab(event, tabName) {
+function showConfigTab(tabName, displayMessage) {
 
 	// remove active flag from all tabs
 	$('.tablinks').each(function() {
@@ -503,7 +526,7 @@ function showConfigTab(event, tabName) {
 	});
 
 	// and add it to the current one
-	$(event.currentTarget).addClass("active");
+	$('#' + tabName + 'Tab').addClass("active");
 
 	// now disable all configuration sections
 	$('.configurationTab').each(function() {
@@ -512,6 +535,9 @@ function showConfigTab(event, tabName) {
 
 	// Mirth instance configuration tab needs some extra love
 	if(tabName == 'systemConfiguration'){
+
+		// determine if initial configuration info message should be displayed
+		$('#intitialConfigInfo').css('display', displayMessage ? 'block' : 'none');
 		// assemble the environment select box
 		var environmentSelect = createEnvironmentSelect();
 		
@@ -522,6 +548,9 @@ function showConfigTab(event, tabName) {
 			// replace the select box with an up to date version
 			$(this).find('td').eq(6).html(environmentSelect.replace('value="' + environmentId + '"', 'value="' + environmentId + '" selected'));
 		});
+	} else{
+		// well, this is a little bit slack might later on be expanded to a help system for all items
+		$('#intitialConfigInfo').css('display', 'none');
 	}
 	
 	// make it fancy by displaying the color of the choosen environment
