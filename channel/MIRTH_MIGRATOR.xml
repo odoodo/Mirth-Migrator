@@ -7,9 +7,10 @@
 Please check https://github.com/odoodo/Mirth-Migrator for further details.&#xd;
 &#xd;
 Version:&#xd;
+20241023: added installation validation at startup&#xd;
 20240822: added support for configuration frontend&#xd;
 20240521: initial version</description>
-  <revision>475</revision>
+  <revision>7</revision>
   <sourceConnector version="3.7.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -37,6 +38,10 @@ Version:&#xd;
           <entry>
             <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
             <string>Mirth Migrator</string>
+          </entry>
+          <entry>
+            <string>265a8bca-979e-49c3-ba25-b217a6cfa9f2</string>
+            <string>MirthMigrator</string>
           </entry>
         </resourceIds>
         <queueBufferSize>1000</queueBufferSize>
@@ -309,6 +314,10 @@ return true;</script>
               <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
               <string>Mirth Migrator</string>
             </entry>
+            <entry>
+              <string>265a8bca-979e-49c3-ba25-b217a6cfa9f2</string>
+              <string>MirthMigrator</string>
+            </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
           <reattachAttachments>true</reattachAttachments>
@@ -415,6 +424,10 @@ IjogdHJ1ZQp9</inboundTemplate>
               <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
               <string>Mirth Migrator</string>
             </entry>
+            <entry>
+              <string>265a8bca-979e-49c3-ba25-b217a6cfa9f2</string>
+              <string>MirthMigrator</string>
+            </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
           <reattachAttachments>true</reattachAttachments>
@@ -513,6 +526,10 @@ Igp9</inboundTemplate>
               <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
               <string>Mirth Migrator</string>
             </entry>
+            <entry>
+              <string>265a8bca-979e-49c3-ba25-b217a6cfa9f2</string>
+              <string>MirthMigrator</string>
+            </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
           <reattachAttachments>true</reattachAttachments>
@@ -610,6 +627,10 @@ OWRhIiwKCQkiOGY3ODA3Y2UtM2NjZS00ZWZjLWE4ZjMtMzlhZWNmOTI1OWRiIgoJXQp9</inboundTem
             <entry>
               <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
               <string>Mirth Migrator</string>
+            </entry>
+            <entry>
+              <string>265a8bca-979e-49c3-ba25-b217a6cfa9f2</string>
+              <string>MirthMigrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -710,6 +731,10 @@ responseMap.put(&apos;response&apos;, JSON.stringify(conflictingComponents.paylo
               <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
               <string>Mirth Migrator</string>
             </entry>
+            <entry>
+              <string>265a8bca-979e-49c3-ba25-b217a6cfa9f2</string>
+              <string>MirthMigrator</string>
+            </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
           <reattachAttachments>true</reattachAttachments>
@@ -809,6 +834,10 @@ OC1iYTYyLTFhZTIzMTIzYjBiMyIsCgkJCSJ0eXBlIjogImNvZGVUZW1wbGF0ZSIKCQl9Cn0=</inboun
             <entry>
               <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
               <string>Mirth Migrator</string>
+            </entry>
+            <entry>
+              <string>265a8bca-979e-49c3-ba25-b217a6cfa9f2</string>
+              <string>MirthMigrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -915,6 +944,10 @@ OC1iYTYyLTFhZTIzMTIzYjBiMyIsCgkJCSJ0eXBlIjogImNvZGVUZW1wbGF0ZSIKCQl9Cn0=</inboun
               <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
               <string>Mirth Migrator</string>
             </entry>
+            <entry>
+              <string>265a8bca-979e-49c3-ba25-b217a6cfa9f2</string>
+              <string>MirthMigrator</string>
+            </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
           <reattachAttachments>true</reattachAttachments>
@@ -1019,6 +1052,10 @@ YjBlNi1lMjI2OTliZmEzYTMiLAoJCQkidHlwZSI6ICJjb2RlVGVtcGxhdGUiCgkJfQoJXQp9</inboun
               <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
               <string>Mirth Migrator</string>
             </entry>
+            <entry>
+              <string>265a8bca-979e-49c3-ba25-b217a6cfa9f2</string>
+              <string>MirthMigrator</string>
+            </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
           <reattachAttachments>true</reattachAttachments>
@@ -1114,6 +1151,10 @@ responseMap.put(&apos;response&apos;, JSON.stringify(environments.payload));</sc
               <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
               <string>Mirth Migrator</string>
             </entry>
+            <entry>
+              <string>265a8bca-979e-49c3-ba25-b217a6cfa9f2</string>
+              <string>MirthMigrator</string>
+            </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
           <reattachAttachments>true</reattachAttachments>
@@ -1207,6 +1248,10 @@ responseMap.put(&apos;response&apos;, JSON.stringify(systems.payload));</script>
             <entry>
               <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
               <string>Mirth Migrator</string>
+            </entry>
+            <entry>
+              <string>265a8bca-979e-49c3-ba25-b217a6cfa9f2</string>
+              <string>MirthMigrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -1303,6 +1348,10 @@ responseMap.put(&apos;response&apos;, JSON.stringify(configuration.payload));</s
               <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
               <string>Mirth Migrator</string>
             </entry>
+            <entry>
+              <string>265a8bca-979e-49c3-ba25-b217a6cfa9f2</string>
+              <string>MirthMigrator</string>
+            </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
           <reattachAttachments>true</reattachAttachments>
@@ -1395,6 +1444,10 @@ responseMap.put(&apos;response&apos;, &apos;{}&apos;);</script>
             <entry>
               <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
               <string>Mirth Migrator</string>
+            </entry>
+            <entry>
+              <string>265a8bca-979e-49c3-ba25-b217a6cfa9f2</string>
+              <string>MirthMigrator</string>
             </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
@@ -1492,6 +1545,10 @@ responseMap.put(&apos;response&apos;, JSON.stringify(referencedCodeTemplate.payl
               <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
               <string>Mirth Migrator</string>
             </entry>
+            <entry>
+              <string>265a8bca-979e-49c3-ba25-b217a6cfa9f2</string>
+              <string>MirthMigrator</string>
+            </entry>
           </resourceIds>
           <queueBufferSize>1000</queueBufferSize>
           <reattachAttachments>true</reattachAttachments>
@@ -1576,7 +1633,9 @@ try {
 	var mirthMigratorFolder = new java.io.File(&apos;web&apos;);
 	
 	if(!mirthMigratorFolder.exists() || !mirthMigratorFolder.isDirectory()){	
+		logger.error(&quot;#####################################################################################&quot;);
 		logger.error(&apos;\n\nThe Mirth Migrator folder was not found! \nPlease place the folder &quot;web&quot; at &quot;&apos; + rootPath + &apos;&quot;.&apos;);
+		logger.error(&quot;#####################################################################################&quot;);
 		ChannelUtil.undeployChannel(channelId);
 		return;
 	} 
@@ -1584,7 +1643,9 @@ try {
 	// 2.) check if the Mirth Migrator library is at the right spot
 	var jarFile = new java.io.File(&apos;web/MirthMigrator/jar/MirthMigrator.jar&apos;);
 	if(!jarFile.exists() || jarFile.isDirectory()){	
+		logger.error(&quot;#####################################################################################&quot;);
 		logger.error(&apos;\n\nThe Mirth Migrator library was not found! \nThe library must be located at &quot;&apos; + jarFile.getAbsolutePath() + &apos;&quot;.&apos;);
+		logger.error(&quot;#####################################################################################&quot;);
 		ChannelUtil.undeployChannel(channelId);
 		return;
 	}
@@ -1600,11 +1661,15 @@ try {
 		const mirthMigrator = dontDoThisAtHome.loadClass(&quot;lu.hrs.mirth.migration.MirthMigrator&quot;);
 		var mirthMigratorVersion= mirthMigrator.getMethod(&quot;getVersion&quot;).invoke(null);
 		
+		logger.error(&quot;#####################################################################################&quot;);
 		logger.error(&apos;\n\nMirth Migrator v&apos; + mirthMigratorVersion + &apos; was found at the right spot. \nHowever it seems like MirthMigrator.jar was not defined as a resource for channel &apos; + channelName + &apos;. \n\nPlease define the library as a resource via Mirth Administrator: Settings/Resources \nand reference it in the channel (at Summary/Set Dependencies/Library Resources)!&apos;);
+		logger.error(&quot;#####################################################################################&quot;);
 		ChannelUtil.undeployChannel(channelId);  
 	} catch (err) {
 		// 4.) Not able to specify the error reason. Let&apos;s assume the file is corrupt.
+		logger.error(&quot;#####################################################################################&quot;);
 		logger.error(&apos;\n\nThe Mirth Migrator library &quot;&apos; + jarFile.getAbsolutePath() + &apos;&quot; seems to be corrupt. \nPlease redownload from https://github.com/odoodo/Mirth-Migrator/releases&apos;);
+		logger.error(&quot;#####################################################################################&quot;);
 		ChannelUtil.undeployChannel(channelId);  		
 	}
 	
@@ -1615,7 +1680,6 @@ try {
 var rhinoVersion = org.mozilla.javascript.Context.getCurrentContext().getImplementationVersion();
 // and indicate it in the logs
 logger.info(&apos;Mirth Migrator v&apos; + mirthMigratorVersion + &apos; under JavaScript version: &apos; + rhinoVersion + &apos; started&apos;);
-
 
 return;</deployScript>
   <undeployScript>
@@ -1654,13 +1718,17 @@ return;</undeployScript>
         <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
         <string>Mirth Migrator</string>
       </entry>
+      <entry>
+        <string>265a8bca-979e-49c3-ba25-b217a6cfa9f2</string>
+        <string>MirthMigrator</string>
+      </entry>
     </resourceIds>
   </properties>
   <exportData>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1729691147028</time>
+        <time>1729766048290</time>
         <timezone>Europe/Berlin</timezone>
       </lastModified>
       <pruningSettings>
