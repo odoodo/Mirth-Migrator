@@ -70,10 +70,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Provides the API that allows the Mirth Migrator to communicate w/ the configured Mirth instances
- * 
+ *
  * License: MPL 2.0
  * Project home: https://github.com/odoodo/Mirth-Migrator
- * 
+ *
  * @author ortwin.donak
  *
  */
@@ -857,7 +857,7 @@ public class MirthMigrator {
 	 * returned information will be used for populating the tables of the source and the destination system. For the metadata table and the content
 	 * section another function {@link #getComponentDetails(String, String)} will be consumed.
 	 * 
-	 * @param componentGroupType
+	 * @param groupType
 	 *            Either {@link #CHANNEL_GROUP} or {@link #CODE_TEMPLATE_LIBRARY}
 	 * @return A JSON object with the following structure:
 	 *         <ul>
@@ -877,9 +877,9 @@ public class MirthMigrator {
 	 * returned information will be used for populating the tables of the source and the destination system. For the metadata table and the content
 	 * section another function {@link #getComponentDetails(String, String)} will be consumed.
 	 * 
-	 * @param componentGroupType
+	 * @param groupType
 	 *            Either {@link #CHANNEL_GROUP} or {@link #CODE_TEMPLATE_LIBRARY}
-	 * @param componentGroupType
+	 * @param refresh
 	 *            If this flag is set, the configuration of this system will be reloaded before the answer is generated
 	 * @return A JSON object with the following structure:
 	 *         <ul>
@@ -1022,11 +1022,7 @@ public class MirthMigrator {
 	 * </ul>
 	 * The configuration file location is defined by {@link #configurationFileLocation}<br/>
 	 * <br/>
-	 * 
-	 * @param name
-	 *            The name of the requested Mirth client
-	 * @param forceReload
-	 *            If this flag is set, the requested Mirth client is reloaded regardless if it already exists
+	 *
 	 * @return The Mirth client instance
 	 * @throws IOException
 	 *             If the configuration file could not be loaded
@@ -2611,8 +2607,8 @@ public class MirthMigrator {
 	/**
 	 * Provides the name of a code template that corresponds to a given id
 	 *
-	 * @param codeTemplateName
-	 *            The name of the code template for which the id should be obtained
+	 * @param codeTemplateId
+	 *            The id of the code template for which the id should be obtained
 	 * @return id of the code template or null if no code template could be found that corresponds to the given name
 	 * @throws ServiceUnavailableException
 	 */
@@ -2639,8 +2635,8 @@ public class MirthMigrator {
 	/**
 	 * Provides the id of a channel that corresponds to a given name
 	 *
-	 * @param channelName
-	 *            The name of the channel for which the id should be obtained
+	 * @param channelId
+	 *            The id of the channel for which the id should be obtained
 	 * @return id of the channel or null if no channel could be found that corresponds to the given name
 	 * @throws ServiceUnavailableException
 	 * @throws ConfigurationException 
@@ -2703,7 +2699,7 @@ public class MirthMigrator {
 	 * Detects the functions that are used by the code templates by parsing the code template source code. It caches a mapping between the referencing
 	 * and referenced functions as well as the other way round.
 	 * 
-	 * @param codeTemplateDefinition
+	 * @param xml
 	 *            The source code of the code templates (code template definition)
 	 */
 	private void buildUpTemplateToTemplateRelationships(String xml) {
@@ -3076,7 +3072,7 @@ public class MirthMigrator {
 	
 	/**
 	 * Provides information about an external resource that is referenced by Mirth
-	 * @param name The name of the external resource
+	 * @param resourceName The name of the external resource
 	 * @return A JSON object containing the following information:
 	 * <ul>
 	 * 	<li><b>name</b> - The name of the resource</li>
@@ -3575,10 +3571,8 @@ public class MirthMigrator {
 	/**
 	 * Provides the metadata and source code of a specific component
 	 * 
-	 * @param componentType
+	 * @param component
 	 *            {@link #CHANNEL_GROUP}, {@link #CHANNEL}, {@link #CODE_TEMPLATE_LIBRARY}, or {@link #CODE_TEMPLATE}
-	 * @param componentId
-	 *            The unique id of the component
 	 * @return A JSON object containing the following information:
 	 *         <ul>
 	 *         <li><b>success</b> - The status that indicates if the operation was successful (true) or not (false)</li>
@@ -4780,9 +4774,6 @@ public class MirthMigrator {
 	 *            <li><b>id</b> - The id of the component</li>
 	 *            <li><b>type</b> - The type of the component (<i>channel</i> or <i>codeTemplate</i>)</li>
 	 *            </ul>
-	 * @param reloadCaches
-	 *            If set, the caches of the mirth instances are reloaded before the conflict detection starts in order to assure the latest versions
-	 *            from the server are used
 	 * @return A list of components that already exist at the target system and thus are causing potential conflicts. There is a special, artificial
 	 *         component with the component type application.<br/>
 	 *         <br/>
@@ -4818,8 +4809,6 @@ public class MirthMigrator {
 	 *            <li><b>id</b> - The id of the component</li>
 	 *            <li><b>type</b> - The type of the component (<i>channel</i> or <i>codeTemplate</i>)</li>
 	 *            </ul>
-	 * @param checkReferencedTemplates
-	 *            If set, the system checks which code templates are referenced by the channel and validates them for conflicts
 	 * @param reloadCaches
 	 *            If set, the caches of the mirth instances are reloaded before the conflict detection starts in order to assure the latest versions
 	 *            from the server are used
@@ -6813,8 +6802,8 @@ public class MirthMigrator {
 	 * 
 	 * @param targetSystem
 	 *            A mirth client for the target mirth system to which the code templates should be migrated
-	 * @param channelIds
-	 *            A list of IDs of channels from the source system that should be migrated
+	 * @param codeTemplateIds
+	 *            A list of IDs of codetemplatess from the source system that should be migrated
 	 * @return A JSON Object containing the following elements:
 	 *         <ul>
 	 *         <li><b>success</b> - a JSON Array of successfully migrated mirth code templates. Each entry contains the following attributes:
