@@ -7,9 +7,10 @@
 Please check https://github.com/odoodo/Mirth-Migrator for further details.&#xd;
 &#xd;
 Version:&#xd;
+20241030: added auto-detection of API port used by the host Mirth instance&#xd;
 20240822: added support for configuration frontend&#xd;
 20240521: initial version</description>
-  <revision>477</revision>
+  <revision>497</revision>
   <sourceConnector version="3.7.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1611,6 +1612,21 @@ try {
 	return;
 }
 
+// this is nasty but the only way I found so far to determine the configured API port (w/o using reflection)
+try {
+	// load the mirth.properties file
+	var mirthProperties = new Packages.org.apache.commons.configuration.PropertiesConfiguration();
+	var  mirthPropertiesStream = new java.io.FileInputStream(&quot;conf/mirth.properties&quot;);
+	mirthProperties.setDelimiterParsingDisabled(true);
+	mirthProperties.load(mirthPropertiesStream);
+
+	// and set the detected api port. This port will be used for user validation
+	Packages.lu.hrs.mirth.migration.MirthMigrator.setApiPort( mirthProperties.getInt(&quot;https.port&quot;));
+} finally {
+	// make sure the properties file is closed
+	try{Packages.org.apache.commons.io.IOUtils.closeQuietly(mirthPropertiesStream);}catch(e){}
+}
+
 // get the Rhino version
 var rhinoVersion = org.mozilla.javascript.Context.getCurrentContext().getImplementationVersion();
 // and indicate it in the logs
@@ -1622,7 +1638,7 @@ return;</deployScript>
 return;</undeployScript>
   <properties version="3.7.1">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
-    <messageStorageMode>PRODUCTION</messageStorageMode>
+    <messageStorageMode>METADATA</messageStorageMode>
     <encryptData>false</encryptData>
     <removeContentOnCompletion>false</removeContentOnCompletion>
     <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
@@ -1660,7 +1676,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1730144084630</time>
+        <time>1730308861932</time>
         <timezone>Europe/Berlin</timezone>
       </lastModified>
       <pruningSettings>
