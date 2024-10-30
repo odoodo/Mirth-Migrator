@@ -80,6 +80,9 @@ import org.slf4j.LoggerFactory;
 public class MirthMigrator {
 
 	private final static String version = "1.0";
+	
+	private static String defaultServerName = "localhost";
+	private static int defaultServerPort = 8443;
 
 	/** The identifier or the component type channel */
 	public final static String CHANNEL = "channel";
@@ -515,6 +518,34 @@ public class MirthMigrator {
 	}
 
 	/**
+	 * Allows to set a custom API port that is used for user login
+	 * 
+	 * @param apiPort
+	 *            The API port
+	 */
+	public static void setApiPort(int apiPort) {
+		if (apiPort > 0) {
+			// change the port that is used for user login
+			defaultServerPort = apiPort;
+			logger.debug("changed port for user login to " + defaultServerPort);
+		}
+	}
+	
+	/**
+	 * Allows to set a custom API host that is used for user login
+	 * 
+	 * @param apiHost
+	 *            The API host
+	 */
+	public static void setApiHost(String apiHost) {
+		if ((apiHost != null) && (apiHost.trim().length() > 0)) {
+			// change the host that is used for user login
+			defaultServerName = apiHost.trim();
+			logger.debug("changed port for user login to " + defaultServerName);
+		}
+	}
+	
+	/**
 	 * Validates a provided user account against a Mirth instance and creates a user session if the validation process was successful
 	 * 
 	 * @param credentials
@@ -641,11 +672,11 @@ public class MirthMigrator {
 		String userSessionCookie = null;
 		if ((serverName == null) || (serverName.isEmpty())) {
 			// by default use the Mirth instance that runs MirthMigrator
-			serverName = "localhost";
+			serverName = defaultServerName;
 		}
 		if (serverPort == null) {
 			// by default use the Mirth standard port
-			serverPort = 8443;
+			serverPort = defaultServerPort;
 		}
 		trustAll();
 		// try to authenticate
@@ -658,36 +689,36 @@ public class MirthMigrator {
 			userSessionCookie = login.getString("sessionCookie").replaceAll(";Path=/api;Secure", "");
 			// log the user out again
 			logout(userSessionCookie, serverPort, serverName);
-		}
 
-		synchronized (MirthMigrator.userSessionCache) {
-			// check if there is still an active session in the cache. This avoids double session timeout in case of concurrent ajax requests
-			Iterator<Map.Entry<String, HashMap<String, Object>>> iterator = MirthMigrator.userSessionCache.entrySet().iterator();
-			while (iterator.hasNext()) {
-				// check next session
-				HashMap<String, Object> session = iterator.next().getValue();
-				if (logger.isDebugEnabled()) {
-					logger.debug("Checking session \"" + session.get("sessionCookie") + "\"");
-				}
-				// if the session contains the username and is still valid
-				if ((session.get("sessionCookie") != null) && session.get("username").equals(username)
-						&& (System.currentTimeMillis() - ((long) session.get("lastAccess")) <= getUserSessionLifeSpan() * 60000)) {
-					// reset the session life
-					session.put("lastAccess", System.currentTimeMillis());
-					String backup = userSessionCookie;
-					// and reuse this session
-					userSessionCookie = (String) session.get("sessionCookie");
+			synchronized (MirthMigrator.userSessionCache) {
+				// check if there is still an active session in the cache. This avoids double session timeout in case of concurrent ajax requests
+				Iterator<Map.Entry<String, HashMap<String, Object>>> iterator = MirthMigrator.userSessionCache.entrySet().iterator();
+				while (iterator.hasNext()) {
+					// check next session
+					HashMap<String, Object> session = iterator.next().getValue();
 					if (logger.isDebugEnabled()) {
-						logger.debug("Recycled session \"" + userSessionCookie + "\". New session \"" + backup + "\" will be discarded");
+						logger.debug("Checking session \"" + session.get("sessionCookie") + "\"");
 					}
-					// work is done
-					break;
+					// if the session contains the username and is still valid
+					if ((session.get("sessionCookie") != null) && session.get("username").equals(username)
+							&& (System.currentTimeMillis() - ((long) session.get("lastAccess")) <= getUserSessionLifeSpan() * 60000)) {
+						// reset the session life
+						session.put("lastAccess", System.currentTimeMillis());
+						String backup = userSessionCookie;
+						// and reuse this session
+						userSessionCookie = (String) session.get("sessionCookie");
+						if (logger.isDebugEnabled()) {
+							logger.debug("Recycled session \"" + userSessionCookie + "\". New session \"" + backup + "\" will be discarded");
+						}
+						// work is done
+						break;
+					}
 				}
 			}
+			// store the session cookie (and assure that any pre-existing session of the very user is terminated)
+			setUserSession(username, userSessionCookie, true);
 		}
-		// store the session cookie (and assure that any pre-existing session of the very user is terminated)
-		setUserSession(username, userSessionCookie, true);
-		
+
 		return userSessionCookie;
 	}
 
@@ -738,7 +769,8 @@ public class MirthMigrator {
 		JSONObject result = new JSONObject();
 		result.put("responseCode", 500);
 		result.put("responseMessage", "Internal Error - this was not expected");
-
+		result.put("loginSuccessful", false);
+		
 		byte[] postDataBytes = null;
 
 		// open the connection
