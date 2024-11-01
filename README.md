@@ -1,5 +1,5 @@
 <p align="center"><img src="https://github.com/user-attachments/assets/7d9cabf1-b4d2-4e32-8b40-3a579f398b72"></p>
-<b>Mirth Migrator</b> automates the transfer of <a href="https://www.nextgen.com/solutions/interoperability/mirth-integration-engine/mirth-connect-downloads" target="_blank">Mirth Enterprise Service Bus</a> channels and code templates from one instance to another.
+<b>Mirth Migrator</b> automates the transfer of <a href="https://www.nextgen.com/solutions/interoperability/mirth-integration-engine/mirth-connect-downloads" target="_blank">Mirth Connect Enterprise Service Bus</a> channels and code templates from one instance to another. It further allows to check the validity of channels & code templates.
 <h2>Features</h2>
 <ul>
   <li><b>Code Templates and Channel Migration</b><br/>Code templates, channels, and even entire Channel Groups or Code Template Libraries can be migrated between Mirth instances with a single click. Code templates of directly or indirectly referenced functions can be automatically migrated with the channels.<br/><br/>
