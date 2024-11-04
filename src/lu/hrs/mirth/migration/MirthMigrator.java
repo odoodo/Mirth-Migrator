@@ -3245,7 +3245,7 @@ public class MirthMigrator {
 	 * @throws ConfigurationException
 	 */
 	private synchronized void buildUpCodeTemplateRelationships(String xml) throws ConfigurationException {
-// xxx
+
 		String channelDefinition = null;
 		Matcher channelMatcher, idMatcher, functionReferenceMatcher, functionNameMatcher;
 		TreeSet<String> detectedFunctions = null;
@@ -7874,7 +7874,9 @@ public class MirthMigrator {
 			} catch (Exception e) {
 			}
 		}
-
+		
+		result.put("success", true);
+		
 		return result;
 	}
 
