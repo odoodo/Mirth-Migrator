@@ -10,7 +10,7 @@ Version:&#xd;
 20241030: added auto-detection of API port used by the host Mirth instance&#xd;
 20240822: added support for configuration frontend&#xd;
 20240521: initial version</description>
-  <revision>497</revision>
+  <revision>500</revision>
   <sourceConnector version="3.7.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1613,25 +1613,29 @@ try {
 }
 
 // this is nasty but the only way I found so far to determine the configured API port (w/o using reflection)
-try {
-	// load the mirth.properties file
-	var mirthProperties = new Packages.org.apache.commons.configuration.PropertiesConfiguration();
-	var  mirthPropertiesStream = new java.io.FileInputStream(&quot;conf/mirth.properties&quot;);
-	mirthProperties.setDelimiterParsingDisabled(true);
-	mirthProperties.load(mirthPropertiesStream);
 
-	// and set the detected api port. This port will be used for user validation
-	Packages.lu.hrs.mirth.migration.MirthMigrator.setApiPort( mirthProperties.getInt(&quot;https.port&quot;));
-} finally {
-	// make sure the properties file is closed
-	try{Packages.org.apache.commons.io.IOUtils.closeQuietly(mirthPropertiesStream);}catch(e){}
+// load the mirth.properties file
+try {
+	// set the property file location
+	var propertiesLocation = new java.io.File(&quot;conf/mirth.properties&quot;);
+	// try to load with commons configuration 2 first
+	var configurations = new org.apache.commons.configuration2.builder.fluent.Configurations();
+	var mirthProperties = configurations.properties(propertiesLocation); 	  
+} catch (err) {
+	// this didn&apos;t work out. So the old version of commons configuration is still used
+	var mirthProperties = new Packages.org.apache.commons.configuration.PropertiesConfiguration();
+	// don&apos;t split the entries	
+	mirthProperties.setDelimiterParsingDisabled(true);
+	mirthProperties.load(propertiesLocation);
 }
+
+// and set the detected api port. This port will be used for user validation
+Packages.lu.hrs.mirth.migration.MirthMigrator.setApiPort( mirthProperties.getInt(&quot;https.port&quot;));
 
 // get the Rhino version
 var rhinoVersion = org.mozilla.javascript.Context.getCurrentContext().getImplementationVersion();
 // and indicate it in the logs
 logger.info(&apos;Mirth Migrator v&apos; + mirthMigratorVersion + &apos; under JavaScript version: &apos; + rhinoVersion + &apos; started&apos;);
-
 
 return;</deployScript>
   <undeployScript>
@@ -1676,7 +1680,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1730308861932</time>
+        <time>1730726760866</time>
         <timezone>Europe/Berlin</timezone>
       </lastModified>
       <pruningSettings>
