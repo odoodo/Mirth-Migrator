@@ -6,6 +6,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
@@ -28,7 +30,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -79,7 +80,7 @@ import org.slf4j.LoggerFactory;
  */
 public class MirthMigrator {
 
-	private final static String version = "1.0";
+	private final static String version = "1.0.1";
 	
 	private static String defaultServerName = "localhost";
 	private static int defaultServerPort = 8443;
@@ -1966,6 +1967,16 @@ public class MirthMigrator {
 		this.functionConflicts = null;
 		this.unknownChannelFunctions = null;
 		this.unknownFunctionFunctions = null;
+		
+		if(logger.isDebugEnabled()) {
+	        StringWriter stackTrace = new StringWriter();
+	        PrintWriter printWriter = new PrintWriter(stackTrace);
+	        
+	        // Capture the current stack trace
+	        new Exception().printStackTrace(printWriter);
+	        
+			logger.debug("forceRefresh(" + getServer() + ") was called from: \n" + stackTrace.toString());
+		}
 	}
 
 	/**
@@ -5876,8 +5887,6 @@ public class MirthMigrator {
 				restService = connectToRestService(serviceUrl);
 				// try to re-execute the query
 				response = getResponseAsXml(restService, getServerSessionCookie());
-				// all caches need to be refilled as current state of the server is unknown
-				forceRefresh();
 			}
 		}
 
@@ -5945,8 +5954,6 @@ public class MirthMigrator {
 				restService = connectToRestService(restService.getURL().getPath());
 				// try to re-execute the query
 				response = getResponseAsJson(restService, getServerSessionCookie());
-				// all caches need to be refilled as current state of the server is unknown
-				forceRefresh();
 			} else {
 				logger.error("Re-login to \"" + restService.getURL().getHost() + ":" + restService.getURL().getPort() + "\"was not successful");
 			}
