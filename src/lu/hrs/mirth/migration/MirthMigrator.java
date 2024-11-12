@@ -2979,7 +2979,7 @@ public class MirthMigrator {
 				// add the last modified date for displaying
 				metaData.accumulate("Display date", (lastModified != null) ? formatDate(lastModified) : "-");
 
-				String description = channel.getString("description").replaceAll("&lt;", "<").replaceAll("&gt;", ">");
+				String description = channel.getString("description");
 				// extract all documented channel changes and sort it from newest to oldest
 				TreeMap<Long, String> changes = new TreeMap<Long, String>(Collections.reverseOrder());
 				Matcher changesMatcher = changesPattern.matcher(description);
