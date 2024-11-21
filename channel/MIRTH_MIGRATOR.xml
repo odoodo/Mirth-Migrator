@@ -83,7 +83,7 @@ Version:&#xd;
         <com.mirth.connect.connectors.http.HttpStaticResource>
           <contextPath>/MirthMigrator</contextPath>
           <resourceType>FILE</resourceType>
-          <value>./web/MirthMigrator/html/iindex.html</value>
+          <value>./web/MirthMigrator/html/index.html</value>
           <contentType>text/html</contentType>
         </com.mirth.connect.connectors.http.HttpStaticResource>
         <com.mirth.connect.connectors.http.HttpStaticResource>
