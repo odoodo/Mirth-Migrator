@@ -2780,7 +2780,7 @@ public class MirthMigrator {
 			} else {
 				functionStart = codeTemplateDefinition.indexOf("<code>");
 				// this code template does not contain any function definitions but might contain references.
-				nameMatcher = namePattern.matcher(xml);
+				nameMatcher = namePattern.matcher(codeTemplateDefinition);
 				// Thus use template name as name
 				currentFunctionName = nameMatcher.find() ? nameMatcher.group(1) : "Unknown_" + UUID.randomUUID();
 			}
@@ -2813,7 +2813,7 @@ public class MirthMigrator {
 						continue;
 					}
 					
-					// if this reference was alread detected
+					// if this reference was already detected
 					if(detectedFunctions.contains(referencedFunctionName)) {
 						// no need to scan it again
 						continue;
@@ -2850,8 +2850,7 @@ public class MirthMigrator {
 					
 					// it's no function w/o brackets ;-)
 					referencedFunctionName += "()";
-					// add the function to the result set (add this function/code template to the list of functions that use the currently detected
-					// function)
+					// add the function to the result set (add this function/code template to the list of functions that use the currently detected function)
 					detectedFunctions.add(referencedFunctionName);
 					// if the detected function was not yet referenced
 					if (!this.functionLinkedByFunctions.containsKey(referencedFunctionName)) {
@@ -4284,7 +4283,7 @@ public class MirthMigrator {
 
 		// and assemble a new json object that just contains the information needed by the client
 		String functionName = null;
-		if (codeTemplate.has("Is function")) {
+		if (codeTemplate.getBoolean("Is function")) {
 			functionName = codeTemplate.getString("Function name");
 			result.accumulate("Function Name", functionName);
 		}
@@ -5046,11 +5045,15 @@ public class MirthMigrator {
 	}
 
 	/**
-	 * Obtains a list of directly and indirectly referenced functions for a function 
-	 * @param functionName The name of the function for which direct and indirect references should be detected. (function name format is like <i>myFunction()</i>)
-	 * @param detectedReferences The list of references (including the function itself)
+	 * Obtains a list of directly and indirectly referenced functions for a function
+	 * 
+	 * @param functionName
+	 *            The name of the function for which direct and indirect references should be detected. (function name format is like
+	 *            <i>myFunction()</i>)
+	 * @param detectedReferences
+	 *            The list of references (including the function itself)
 	 * @return A list of referenced functions
-	 * @throws ServiceUnavailableException 
+	 * @throws ServiceUnavailableException
 	 */
 	private HashSet<String> detectReferencedFunctions(String functionName, HashSet<String> detectedReferences) throws ServiceUnavailableException {
 		if (detectedReferences == null) {
