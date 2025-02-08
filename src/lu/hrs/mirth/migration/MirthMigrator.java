@@ -80,7 +80,7 @@ import org.slf4j.LoggerFactory;
  */
 public class MirthMigrator {
 
-	private final static String version = "1.0.2";
+	private final static String version = "1.0.3";
 	
 	private static String defaultServerName = "localhost";
 	private static int defaultServerPort = 8443;
@@ -131,7 +131,7 @@ public class MirthMigrator {
 	/**
 	 * The location at which the Mirth Migrator configuration file can be found
 	 */
-	private final static String configurationFileLocation = ".\\web\\MirthMigrator\\config\\MirthMigration.conf";
+	private final static String configurationFileLocation = "./web/MirthMigrator/config/MirthMigration.conf";
 
 	/**
 	 * The configured Mirth environments
