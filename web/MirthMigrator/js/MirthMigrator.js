@@ -108,7 +108,7 @@ function systemChanged(systemType){
 	// and also it's display name
 	var systemName = $('#' + systemType + ' option:selected').val();
 	// re-enable all siblings of the currently selected item
-    $("#" + systemType + " option[id=" + system + "]").attr("disabled", "disabled").siblings().removeAttr("disabled");
+    $("#" + systemType + " option[id='" + system + "']").attr("disabled", "disabled").siblings().removeAttr("disabled");
 	
 	// if system selection was removed
 	if(system == 'none'){
