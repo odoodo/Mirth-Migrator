@@ -4270,7 +4270,7 @@ public class MirthMigrator {
 	 * @throws ConfigurationException
 	 * 
 	 */
-	private JSONObject getCodeTemplateDetails(String codeTemplateId, boolean nameOnly) throws ServiceUnavailableException, ConfigurationException {
+	private synchronized JSONObject getCodeTemplateDetails(String codeTemplateId, boolean nameOnly) throws ServiceUnavailableException, ConfigurationException {
 
 		JSONObject result = new JSONObject();
 		// get the cached information about the code template
@@ -4374,7 +4374,7 @@ public class MirthMigrator {
 	 * @throws ServiceUnavailableException
 	 * @throws JSONException
 	 */
-	private Collection<String> generateValidatedLinkedByChannelList(Collection<String> referencingChannelIds, String functionName)
+	private synchronized Collection<String> generateValidatedLinkedByChannelList(Collection<String> referencingChannelIds, String functionName)
 			throws ConfigurationException, ServiceUnavailableException {
 
 		TreeMap<String, String> channels;
