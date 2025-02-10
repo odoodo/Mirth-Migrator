@@ -1694,13 +1694,13 @@ public class MirthMigrator {
 					JSONObject metaData = new JSONObject();
 
 					// add the group name
-					metaData.accumulate("Display name", currentGroup.getString("name"));
+					metaData.accumulate("Display name", String.valueOf(currentGroup.get("name")));
 					// add the group id
 					metaData.accumulate("Id", currentGroup.getString("id"));
 					// indicate that this group is not artificial
 					metaData.accumulate("artificial", false);
 					// add the description of the channel purpose
-					metaData.accumulate("Description", currentGroup.getString("description").replaceAll("&lt;", "<").replaceAll("&gt;", ">")
+					metaData.accumulate("Description", String.valueOf(currentGroup.get("description")).replaceAll("&lt;", "<").replaceAll("&gt;", ">")
 							.replaceAll("\\r\\n|\\r|\\n", "<br>"));
 					// add the last modified date for sorting
 					metaData.accumulate("Last modified", currentGroup.getJSONObject("lastModified").getLong("time"));
@@ -2055,12 +2055,12 @@ public class MirthMigrator {
 				JSONObject metaData = new JSONObject();
 
 				// add the code template library name
-				metaData.accumulate("Display name", currentGroup.getString("name"));
+				metaData.accumulate("Display name", String.valueOf(currentGroup.get("name")));
 				// add the code template library id
 				String libraryId = currentGroup.getString("id");
 				metaData.accumulate("Id", libraryId);
 				// add the description of the code template library purpose
-				metaData.accumulate("Description", currentGroup.getString("description").replaceAll("&lt;", "<").replaceAll("&gt;", ">")
+				metaData.accumulate("Description", String.valueOf(currentGroup.get("description")).replaceAll("&lt;", "<").replaceAll("&gt;", ">")
 						.replaceAll("\\\"", "&quot;").replaceAll("\\r|\\n", "<br>"));
 				// add the last modified date for sorting
 				metaData.accumulate("Last modified", currentGroup.getJSONObject("lastModified").getLong("time"));
@@ -2412,7 +2412,7 @@ public class MirthMigrator {
 		// create a new element
 		JSONObject metaData = new JSONObject();
 		// add the configured name of the code template
-		metaData.accumulate("Display name", codeTemplate.getString("name"));
+		metaData.accumulate("Display name", String.valueOf(codeTemplate.get("name")));
 		// add the function name of the code template. If it is no function use the template name
 		metaData.accumulate("Function name", (functionName != null) ? functionName : metaData.getString("Display name"));
 		// add the id of the code template. If there are more than one functions in a code template, create an artificial id (that allows to
@@ -2931,7 +2931,7 @@ public class MirthMigrator {
 				// create a new element
 				JSONObject metaData = new JSONObject();
 				// add the display name of the channel
-				String channelName = channel.getString("name");
+				String channelName = String.valueOf(channel.get("name"));
 				metaData.accumulate("Display name", channelName);
 				// add the id of the channel
 				String channelId = channel.getString("id");
@@ -2978,7 +2978,7 @@ public class MirthMigrator {
 				// add the last modified date for displaying
 				metaData.accumulate("Display date", (lastModified != null) ? formatDate(lastModified) : "-");
 
-				String description = channel.getString("description");
+				String description = String.valueOf(channel.get("description"));
 				// extract all documented channel changes and sort it from newest to oldest
 				TreeMap<Long, String> changes = new TreeMap<Long, String>(Collections.reverseOrder());
 				Matcher changesMatcher = changesPattern.matcher(description);
@@ -4219,10 +4219,10 @@ public class MirthMigrator {
 		// indicate the type
 		result.accumulate("Type", "Channel Group");
 		// as description is optional, only add the attribute if there actually is a description
-		value = group.getString("Description");
+		value = String.valueOf(group.get("Description"));
 
 		// the description of the channel group
-		result.accumulate("Description", !value.isEmpty() ? group.getString("Description") : "-");
+		result.accumulate("Description", !value.isEmpty() ? value : "-");
 
 		// the version of the channel group (revision)
 		result.accumulate("Version", group.getInt("Version"));
