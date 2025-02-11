@@ -5846,7 +5846,7 @@ public class MirthMigrator {
 			// assemble the response and return it
 			result.put("responseCode", connection.getResponseCode());
 			result.put("successful", true);
-			result.put("responseMessage", sb.toString());
+			result.put("responseMessage", sb.toString().replaceAll("(encoding=\"base64\">)[^<]+", "$1REMOVED"));
 
 			return result;
 		} catch (IOException e) {
