@@ -55,13 +55,13 @@
 						<option  class="disabledOption" value="Please select a System" disabled="disabled" selected="selected">Please select a System</option>
 					</select>	
 				</div>
-				<div id="compTypeSelect">
-					<input type="radio" id="channels" class="select" name="compType" value="channelGroup" onclick="populateComponentTables()"> 
-						<label style="vertical-align:baseline;font-size: 1.2vw;" for="channels"> Channels
+				<div id="compTypeSelect" style="display: flex; align-items: center;">
+					<input type="radio" id="channels" class="select" name="compType" value="channelGroup" onclick="populateComponentTables()" style="vertical-align: center;"> 
+						<label style="font-size: 1.2rem;" for="channels" style="vertical-align: center;"> Channels
 						</label>
 					</input>
-					<input type="radio" id="codeTemplates" class="select" name="compType" value="codeTemplateLibrary" onclick="populateComponentTables()">
-						<label style="vertical-align:baseline;font-size: 1.2vw;"  for="codeTemplates"> Code&nbsp;templates/Functions
+					<input type="radio" id="codeTemplates" class="select" name="compType" value="codeTemplateLibrary" onclick="populateComponentTables()"  style="vertical-align: center;">
+						<label style="vertical-align:baseline;font-size: 1.2rem;"  for="codeTemplates"> Code&nbsp;templates/Functions
 						</label>
 					 </input>
 				</div>
@@ -273,6 +273,13 @@
 					</div>
 				</div>
 			</div>
+		</div>
+		<div class="contextMenu">
+		<b>Actions:</b>
+		<hr>
+			<ul>
+				<li class="compare">Compare</li>
+			</ul>
 		</div>
 	</body>
 </html>
