@@ -203,7 +203,6 @@ function populateComponentTables(refresh) {
 		}
 }
 
-
 /**
  * Calles a webservice. If there is no valid session, the user is forced to login, first
  * @param {*} command - the path of the webservice that should be called
@@ -216,7 +215,7 @@ function accessResource(command, payload, action, parameters, refreshCache){
 	// make sure all needed parameters are available
     if((!command || !action)){
 		var message = (!command ? 'The webservice url':'The name of the function that should be called after execution') + ' is missing!';
-		 console. log(message);
+		 console.log(message);
 		 alert(message);
 		 return;
 	}
@@ -966,6 +965,7 @@ function populateTable(statusCode, displayList, parameters){
 				table += 	'<tr draggable="true" tabindex="0" class="' + ((currentItem['artificial']) ? 'unassigned" rowType="artificial"' : 'group" rowType="group"') + 
 							' type="' + currentItem['Type'] + 
 							'" id="' + parameters.systemType + currentItem['Id'] + 
+							'" itemId="' + currentItem['Id'] + 
 							'" name="' + currentItem['Display name'] + 
 							'"><td>' + currentItem['Display name'] + 
 							' (' + currentItem["Number of members"] +
@@ -975,8 +975,9 @@ function populateTable(statusCode, displayList, parameters){
 							'</td></tr>';
 			} else{
 				table += 	'<tr draggable="true" tabindex="0" class="list_' + (index % 2) + 
-							'" type="' + currentItem['Type'] + 
+							' customContextMenu" type="' + currentItem['Type'] + 
 							'" id="' + parameters.systemType + currentItem['Id'] + 
+							'" itemId="' + currentItem['Id'] + 
 							'" name="' + (currentItem['Function name'] || currentItem['Display name']) + 
 							'" style="color:' + ((currentItem['Is disabled']) ? 'LightSlateGray' : 'black') + 
 							';"><td>' + (currentItem['Function name'] || currentItem['Display name']) + 
@@ -987,19 +988,27 @@ function populateTable(statusCode, displayList, parameters){
 			}
 		}      
 		
-			$('#' + parameters.systemType + "Items").append(table);
-			table = '';
-		
-		
-		// activate custom tooltips for the info icons
-		activateToolTips();
-		
+		$('#' + parameters.systemType + "Items").append(table);
+		table = '';
+
 		//do not display checkbox for avoiding to migrate refrenced code templates before anything has been clicked
 		if(isSource){
 			$("#migrateReferencedCodeTemplatesCheckboxDivLeft").css('display','none');
 		}else{
 			$("#migrateReferencedCodeTemplatesCheckboxDivRight").css('display','none');
 		}
+		
+		// cache the different layouts for table entries
+		cacheHighlightClasses($("#" + parameters.systemType + "Items tr"));
+		
+		// highlight the column that is hovered
+		activateHoverEffect();
+		
+		// and also the context menu for the components listed in the table
+		activateContextMenu();
+				
+		// activate custom tooltips for the info icons
+		activateToolTips();
 			
 
 		//If a line in this table is clicked, details about the component should be displayed
@@ -1011,7 +1020,7 @@ function populateTable(statusCode, displayList, parameters){
 			adjustAvoidReferencedTemplatesOption(isSource);
 			//sets the meta data headers corresponding to the selected row such as component type, name and system
 			setMetaDataHeaders($(this), parameters.systemType);
-			//highlights the selected row
+			// <CRTL>-key was pressed when row was clicked: highlights the selected row
 			if(event.ctrlKey){
 				// select multiple
 				highlight($(this), parameters.systemType, true);
@@ -1019,15 +1028,18 @@ function populateTable(statusCode, displayList, parameters){
 					checkSelection(isSource ? "tableDest" : "tableSource");
 				}
 			} else if(event.shiftKey){
+				// <SHIFT>-key was pressed when line was clicked
 				// select range
 				if($(selectedId).index() > $(this).index()){
 					while($(selectedId).index() > $(this).index()){
-						highlight($(selectedId).prev(), parameters.systemType, true);
+						highlight($(selectedId).prev("tr"), parameters.systemType, true);
 					}
 				}
-				else{
+				else{	
 					while($(selectedId).index() < $(this).index()){
-						highlight($(selectedId).next(), parameters.systemType, true);
+						selectedId = $(selectedId).next("tr");
+						if (!selectedId.length) break;
+						highlight(selectedId, parameters.systemType, true);
 					}
 				}
 				if($("#"+ (isSource ? "tableSource" : "tableDest") + " tbody tr.highlight").length > 1){
@@ -1035,7 +1047,6 @@ function populateTable(statusCode, displayList, parameters){
 				}
 			} else{
 				// normal click
-				
 				//highlights just this one clicked row
 				highlight($(this), parameters.systemType, false);
 				//checks for a correspondancy on the other system
@@ -1065,37 +1076,56 @@ function populateTable(statusCode, displayList, parameters){
 			e.preventDefault();
 		});
 		var table = isSource ? "#sourceComponents" : "#destComponents";
-		$(table).unbind('keydown').keydown(function (e) {
+		// Cursor key was pressed:
+		$("table tbody.list tr").off("keydown").on("keydown", function(e) {
 			switch(e.which)
 			{
 				//key LEFT pressed
 				case 37:
-					if($("#sourceComponents tr.componentCorrespondance").length > 0){
-						$("#sourceComponents tr.componentCorrespondance").click().focus();
+					if($("#sourceComponents tr.correspondance").length > 0){
+						$("#sourceComponents tr.correspondance").click().focus();
 					}
 					break;
-
 				//key UP pressed
 				case 38:
-					if($(table + " tr.highlight").index() > 0){
-					var $prev = $(table + " tr.highlight").prev();
-					$prev.click();
-					scrollIntoView($prev);
+					// disable cursor movement at multiselect and when end of table is reached
+					if (($(selectedId).length == 1) && ($(selectedId).index() > 0)){
+						// if the currently active row was hovered
+						if( $(selectedId).attr("class").includes("hoverHighlight")){
+							// remove the highlighting from the hover effect if the cursor moves on
+							$(selectedId).attr("class", $(selectedId).data("hoverClasses"));	
+						}
+						// activate the previous row
+						selectedId = $(selectedId).prev("tr");
+						// trigger click event
+						$(selectedId).click().focus();
+						// and make sure the selected item is still visible
+						scrollIntoView($(selectedId));					
 					}
 					break;
 				//key RIGHT pressed
 				case 39:
-					if($("#destComponents tr.componentCorrespondance").length > 0){
-						$("#destComponents tr.componentCorrespondance").click().focus();
+					if($("#destComponents tr.correspondance").length > 0){
+						$("#destComponents tr.correspondance").click().focus();
 					}
 					break;
 				//key DOWN pressed
 				case 40:
-				if($(table + " tr.highlight").index() < $(table + " tr").length-1){
-					var $next = $(table + " tr.highlight").next();
-					$next.click();
-					scrollIntoView($next);
-				}
+					// disable cursor movement at multiselect and when end of table is reached
+					if (($(selectedId).length == 1) && ($(selectedId).index() <$(this).closest("tbody").children("tr").length - 1)){
+						// if the currently active row was hovered
+						if( $(selectedId).attr("class").includes("hoverHighlight")){
+							// remove the highlighting from the hover effect if the cursor moves on
+							$(selectedId).attr("class", $(selectedId).data("hoverClasses"));	
+						}
+						// activate the next row
+						selectedId = $(selectedId).next("tr");
+						// trigger click event
+						$(selectedId).click().focus();
+						// and make sure the selected item is still visible
+						scrollIntoView($(selectedId));					
+					}
+
 					break;	
 			}
 		});
@@ -1106,6 +1136,43 @@ function populateTable(statusCode, displayList, parameters){
 		if($("#flexBoxButtons").css('visibility') == 'hidden'){
 			$("#flexBoxButtons").css('visibility', 'visible');
 		}
+}
+
+/**
+ * caches normal, hover & highlighting layout for every item in the component table
+ * @param {*} tableBody - The table body containing the components
+ */
+function cacheHighlightClasses(tableBody){
+	if(!tableBody || !tableBody.length){
+		return;
+	}
+	
+	tableBody.each(function(){
+		// standardlayout of the component
+		if ($(this).data("standardClasses") === undefined) {
+			$(this).data("standardClasses", $(this).attr("class"));
+		}
+		// layout that is used when a component is clicked
+		if ($(this).data("highlightClasses") === undefined) {
+			$(this).data("highlightClasses", !$(this).attr('rowType') ? "highlight" : "highlight highlightGroup");
+		}
+		// layout that is used when the component is hovered
+		if ($(this).data("hoverClasses") === undefined) {
+			$(this).data("hoverClasses", !$(this).attr('rowType') ? "hover" : "hover hoverGroup");
+		}
+		// layout that is used when a highlighted component is hovered
+		if ($(this).data("hoverHighlightClasses") === undefined) {
+			$(this).data("hoverHighlightClasses", !$(this).attr('rowType') ? "hoverHighlight" : "hoverHighlight hoverHighlightGroup");
+		}
+		// layout that is used if the component is marked to correspond to a component of the other system
+		if ($(this).data("correspondanceClasses") === undefined) {
+			$(this).data("correspondanceClasses", !$(this).attr('rowType') ? "correspondance" : "correspondance correspondanceGroup");
+		}
+		// layout that is used if the component that marked to correspond to a component of the other system is hovered
+		if ($(this).data("hoverCorrespondanceClasses") === undefined) {
+			$(this).data("hoverCorrespondanceClasses", !$(this).attr('rowType') ? "hoverCorrespondance" : "hoverCorrespondance hoverCorrespondanceGroup");
+		}
+    });
 }
 
 /**
@@ -1177,9 +1244,29 @@ function setCheckBoxes(componentType){
  * @param tableRow the row that should remain visible
  */
 function scrollIntoView(tableRow) {
-	
+
+	var table = tableRow.closest("tbody");
 	var container = tableRow.closest("div");
-	container.animate({scrollTop: tableRow.offset().top - container.offset().top + container.scrollTop()}, 1);
+	// determine row location of the DOM element
+	var rowLocation = tableRow[0].getBoundingClientRect();
+	// the same for the table body
+	var tableLocation = table[0].getBoundingClientRect();
+	// and the containing div
+	var containerLocation = container[0].getBoundingClientRect();
+	
+	var rowTop = ~~rowLocation.top;
+	var rowBottom = ~~rowLocation.bottom;
+	var containerTop = ~~containerLocation.top;
+	var containerBottom = ~~containerLocation.bottom;
+	var rowHeight = (rowBottom-rowTop);
+	var containerHeight = (containerBottom-containerTop);
+	
+    // Check if the row is out of view
+    if (rowTop < containerTop) {
+		container.animate({scrollTop: tableRow.offset().top - container.offset().top + container.scrollTop()}, 1);
+    } else if (rowTop+rowHeight > containerBottom) {
+		container.animate({scrollTop: container.offset().top + container.outerHeight()- rowHeight}, 1);
+    }
 }
 
 /**
@@ -1254,49 +1341,53 @@ function setMetaDataHeaders($row, systemType){
  * @param tableRow the row form which the highlighting should be removed
  */
 function removeHighlighting(tableRow){
-	// remove all classes from item
-	$(tableRow).removeClass();
-	//and, depending on the row type, reasign the appropriate class
-	switch($(tableRow).attr('rowType')) {
-		case 'group':
-			$(tableRow).addClass('group');
-			break;
-		case 'artificial':
-			$(tableRow).addClass('unassigned');
-			break;
-		default:
-			$(tableRow).addClass('list_' + ($(tableRow).index() % 2));
-	} 
+//yyy
+	if(!(tableRow instanceof jQuery)){
+		tableRow = $(tableRow);
+	}
+	
+	if(tableRow.attr("class").includes("hoverHighlight") || tableRow.attr("class").includes("hover")){
+		// the row was hovered, make sure the hovering appearance remains (albeit w/o highlighting)
+		tableRow.attr("class", tableRow.data("hoverClasses"));	
+	} else{
+		// the current row was not hovered set it back to standard appearance
+		tableRow.attr("class", tableRow.data("standardClasses"));
+	}	
 }
 
 /**
  * Highlights the chosen row and triggers the display of the corresponding message data
  * 
- * @param $row the row that should be highlighted
+ * @param row the row that should be highlighted
  * @param systemType Indicates on which table the row is
- * @param multipleRows Indicates if the user pressed STRG/COMMAND while clicking, which allows to select more rows.
+ * @param multiSelectKeysPressed Indicates if the user pressed STRG/COMMAND while clicking, which allows to select more rows.
  */
-function highlight($row, systemType, multipleRows) {
+function highlight(row, systemType, multiSelectKeysPressed) {
 
 	var leftToRight = (systemType == "sourceSystem");
     var tableID = leftToRight ? "sourceComponents" : "destComponents";
-    var $tbody = $("#" + tableID + " tbody");
+    var tbody = $("#" + tableID + " tbody");
 	// all items that are already selected 
-    var selected = $tbody.children('tr.highlight');
+    var selected = tbody.children('tr.highlight');
+	
+	var alreadyHighlighted = row.attr("class").includes("hoverHighlight") || row.attr("class").includes("highlight");
 
-	// items have been selected before but multi-row select keys are currently not pressed
-    if(!multipleRows && ((selected.length > 1) || (selected.length && (selected.index() != $row.index())))){
+	// items have been selected before but multi-row select keys are currently not pressed.
+    if(!multiSelectKeysPressed){
+
 		// deselect all currently selected items besides if the currently selected item was pressed again
 		$(selected).each(function(){
 			removeHighlighting(this);
 		});
+		// if multiple items were selected before and the current one was amongst them, the current one should remain selected but not the others
+		alreadyHighlighted = false;
     }
-	
+
 	// If both boxes are filled
 	if(sourceBoxShown && destBoxShown){
 		// if the selected item has been deselected
-		if($row.hasClass("highlight")){
-			// hide the migrate button
+		if(row.attr("class").includes("hoverHighlight")){
+			// hide the migrate and the compare button
 			$("#migrateButton").css('visibility', 'hidden');
 		} else{
 			// show the migration button for left to right respectively right to left, depending on whre the highlighted components are located
@@ -1307,67 +1398,88 @@ function highlight($row, systemType, multipleRows) {
 	}
 	
 	// row was already selected
-    if($row.hasClass("highlight")){
+    if(alreadyHighlighted && !multiSelectKeysPressed){
 		// thus deselect by removing highlighting
-        removeHighlighting(this);
+        removeHighlighting(row);
+		selectedId = "";
     } else{
-		// highlight row
-        $row.removeClass();
-		// highlight row
-		$row.addClass('highlight');
-		// a group row
-		if($row.attr('rowType')){
-			// has to remain bold
-			$row.addClass('highlightGroup');
+		if(row.attr("class").includes("hoverHighlight") || row.attr("class").includes("hover")){
+			// the row was hovered, make sure the hovering appearance remains (albeit w/o highlighting)
+			row.attr("class", row.data("hoverHighlightClasses"));
+		} else{
+			// the current row was not hovered set it back to standard appearance
+			row.attr("class", row.data("highlightClasses"));
 		}
-		
-        selectedId = "#" + $row.attr('id');
+        selectedId = "#" + row.attr('id');
     }
 }
 
 /**
  * checks for a corresponding row on the other table.
- * @param {*} $row The row that was clicked.
+ * @param {*} selectedRow The row that was clicked.
  * @param {*} systemType The systemtype on which a row was clicked so either sourceSystem or destSystem
  */
-function metaDataChecker($row, systemType){
+function metaDataChecker(selectedRow, systemType){
+	var sourceTbody;
+	var destinationTbody = null;
+	var correspondingRow;
 	var correspondingComponentId = null;
- //   var correspondingSystem = (systemType == "sourceSystem") ? "destSystem" : "sourceSystem";
-	// determine the corresponding container
-    var correspondingContainer = (systemType =="sourceSystem") ? "tableDest" : "tableSource";
-	// check for a corresponding item in the other table
-	var correspondingRow = $('#' + correspondingContainer + ' tr[name="' + $row.attr('name') + '"]');
-    if(correspondingRow){
-		// the id consists of the systemtype and the actual id
-		correspondingComponentId = correspondingRow.attr('id');
-	}
 	
-	// if there was already a corresponding item highlighted
-	if(selectedCorrespondanceItemId && (selectedCorrespondanceItemId != $row.attr('id'))){	
-		// no longer needed, remove highlighting
-		removeHighlighting('#' + selectedCorrespondanceItemId);
-	}
-	
-	// if there was a new corresponding item found
-	if(correspondingComponentId){
-		var correspondingComponent = $("#" + correspondingComponentId);
-		// highlight it
-		correspondingComponent.removeClass();
-		correspondingComponent.addClass('componentCorrespondance');
-		// for grouping items
-		if(correspondingComponent.attr('rowType')){
-			// group rows shall remain bold even when highlighted
-			correspondingComponent.addClass('highlightGroup');
+	if(systemType == "sourceSystem"){
+		// if the right table is actually shown
+		if($('#componentTableRight').css('visibility') == 'visible'){
+			sourceTbody = $("#sourceComponents tbody");		
+			destinationTbody = $("#destComponents tbody");
+			// if a row in the left table was highlighted
+			if(selectedRow){
+				// try to find the corresponding row in the right table
+				correspondingRow = $('#tableDest tr[name="' + selectedRow.attr('name') + '"]');
+			}			
 		}
+	}else{
+		// if the left table is actually shown
+		if($('#componentTableLeft').css('visibility') == 'visible'){
+			sourceTbody = $("#destComponents tbody");		
+			destinationTbody = $("#sourceComponents tbody");
+			// if a row in the right table was highlighted
+			if(selectedRow){
+				// try to find the corresponding row in the left table
+				correspondingRow = $('#tableSource tr[name="' + selectedRow.attr('name') + '"]');
+			}
+		}
+	}
+	
+	// if the other table is shown
+	if(destinationTbody){
+		// remove any highlighted elements that might exist
+		var selected = destinationTbody.children('tr.correspondance');
+		$(selected).each(function(){
+			removeHighlighting(this);
+		});			
+	}
+		
+	// if currently a) no row is highlighted, b) no other table shown, or c) multiselect is active
+	if(!selectedRow || !destinationTbody || (sourceTbody.children('tr.highlight').length > 1)){
+		// do not show the compare button
+		$('#compareButton').css('visibility', 'hidden');
+		// no need to search for a corrsponding item
+		return;
+	}
+
+	// if a corresponding component was found at the other Mirth instance
+    if($(correspondingRow).length){
+		// highlight it
+		$(correspondingRow).attr("class", $(correspondingRow).data("correspondanceClasses"));
 		// make it visible (scroll it into view)
-		var container = correspondingComponent.closest("div");
-		container.animate({scrollTop: correspondingComponent.offset().top - container.offset().top + container.scrollTop()}, 1);
-	//	correspondingComponent[0].scrollIntoView({ behavior: "smooth", block: "center" });
-	//	scrollIntoView(correspondingComponent);
-		//and  also remember it
+		var container = $(correspondingRow).closest("div");
+		if(container.length){
+			// + scrollbar vertical position
+			container.animate({scrollTop: $(correspondingRow).offset().top - container.offset().top + container.scrollTop()}, 1);
+		}
+		//and  also remember it - ODO: However not sure if still needed - RECHECK
 		selectedCorrespondanceItemId = correspondingComponentId;
 		// do not show the compare button for grouping components
-		$('#compareButton').css('visibility', ('|channelGroup|codeTemplateLibrary|'.indexOf('|' + $row.attr('type') + '|') + 1) ? 'hidden' : 'visible');
+		$('#compareButton').css('visibility', !selectedRow.attr('rowType') ? 'visible' : 'hidden');
 	}
 }
 
@@ -1776,11 +1888,13 @@ function getComponentId(component){
 
 /**
  * This function is supposed to display the comparison of the 2 components.
+ *	@param {String} targetSystem - The name of the system on which the target component resides. If none is provided, the component on the target system corresponding to the marked component is used
+ *	@param {String} targetComponent - The id of the target component. If none is provided, the component on the target system corresponding to the marked component is used
  */
-function compareComponent(){
+function compareComponent(targetSystem, targetComponent){
 	// at first, obtain a reference to the two involved components
     var sourceComponent = $('#' + (isLeftToRight() ? 'sourceComponents' : 'destComponents') + ' tr.highlight');
-    var destinationComponent = $('#' + (isLeftToRight() ? 'destComponents' : 'sourceComponents') + ' tr.highlight');
+//    var destinationComponent = $('#' + (isLeftToRight() ? 'destComponents' : 'sourceComponents') + ' tr.highlight');
 	
 	// get the type of the component
     var componentType = getComponentType(sourceComponent);
@@ -1795,13 +1909,19 @@ function compareComponent(){
 	
 	var payload = {
 					"sourceSystem": getSourceSystemName(),
-					"destinationSystem": getDestinationSystemName(),
+					"destinationSystem": targetComponent && targetSystem || getDestinationSystemName(),
 					"component": 
 						{
 							"id": getComponentId(sourceComponent),
 							"type": componentType
 						}
 				}
+	// if a specific component was chosen via the context menu
+	if(targetSystem && targetComponent){
+		//  use it for comparison with the selected component instead of the standard behavior (which is to compare to a component w/ the same name in the other system)
+		payload.component.targetId = targetComponent;
+	}
+
 	// compare the component versions on the different systems
 	accessResource('/compareComponent', payload, compare);
 }    
@@ -2258,12 +2378,96 @@ function unquoteXml(quotedXml){
 }
 
 /**
+	Enables the context menu on components in the content table
+*/
+function activateContextMenu(){
+	var $contextMenu = $(".contextMenu");
+	var activeRow;
+
+	$("table tbody.list tr").off("contextmenu").on("contextmenu", function(e) {
+		e.preventDefault();
+		
+		activeRow = $(this);
+
+		// if not exactly 1 component was highlighted or if the highlighted component was clicked or if the component is a group
+		if(($(selectedId).length != 1) || ($("#destSystemItems").children('tr.highlight').length > 1) || ($("#sourceSystemItems").children('tr.highlight').length > 1) || activeRow.attr("class").includes("hoverHighlight") || activeRow.attr('rowType')){
+			// do not offer the context menu
+			return;
+		}
+		
+		// Get the clicked row's data-id
+		var rowId = activeRow.data("id");
+
+		// Position and show the menu
+		$contextMenu.css({
+			top: e.pageY + "px",
+			left: e.pageX + "px"
+		}).show();
+
+		// Store the rowId in the menu for reference
+		$contextMenu.data("rowId", rowId);
+		$contextMenu.data("componentName", activeRow.find("td:eq(0)").text());
+		$contextMenu.data("componentId", activeRow.attr("itemId"));	
+		$contextMenu.data("targetSystem", $((activeRow.closest("tbody").attr("id") == 'sourceSystemItems') ? '#sourceSystem' : '#destSystem').find(":selected").text());	
+	});
+
+	// Hide the menu on click anywhere else
+	$(document).off("mousedown").on("mousedown", function(event) {
+		$contextMenu.hide();	
+	});
+
+	// trigger custom compare
+	$(".contextMenu .compare").off("mousedown").on("mousedown", function() {
+		var componentName = $contextMenu.data("componentName");
+		var componentId = $contextMenu.data("componentId");
+		var targetSystem = $contextMenu.data("targetSystem");
+		// no more need for the context menu at this point
+		$contextMenu.hide();
+		// initiate compare process
+		compareComponent(targetSystem, componentId);
+	})
+}
+
+/**
+	Enables the hovering highlighting on components in the content table
+*/
+function activateHoverEffect(){
+	
+	$("table tbody.list tr").off("mouseenter mouseleave").hover(
+		function() {			
+			if($(this).attr("class").includes("highlight")){
+				// the row was highlighted the appearance remains when hovered
+				$(this).attr("class", $(this).data("hoverHighlightClasses"));
+			} else if($(this).attr("class").includes("correspondance")){
+				// the current row was highlighted as a component that corresponds to a component of the other table. Use the corresponding hover appearance
+				$(this).attr("class", $(this).data("hoverCorrespondanceClasses"));				
+			} else{
+				// the current row was not highlighted. Use the standard hover appearance
+				$(this).attr("class", $(this).data("hoverClasses"));
+			}
+		},
+		function() {
+			if($(this).attr("class").includes("hoverHighlight")){
+				// the row was highlighted the appearance remains when hovered
+				$(this).attr("class", $(this).data("highlightClasses"));
+			} else if($(this).attr("class").includes("hoverCorrespondance")){
+				// the current row was highlighted as a component that corresponds to a component of the other table. Use the corresponding highlight appearance
+				$(this).attr("class", $(this).data("correspondanceClasses"));		
+			}else{
+				// the current $(this) was not hovered set it back to standard appearance
+				$(this).attr("class", $(this).data("standardClasses"));
+			}
+		}
+	);
+}
+
+/**
 	Enables the tooltips that will be displayed when hovering over the tooltip icon
 */
 function activateToolTips(){
 	
 	// add events for making the tooltip visible when hovering over the referencing item
-	$('[id=descriptionIcon]').hover(
+	$('[id=descriptionIcon]').off("mouseenter mouseleave").hover(
 		function(){ 
 			var tooltip = $("#HtmlToolTip");
 			$(tooltip).css('display','block');
