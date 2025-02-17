@@ -4760,8 +4760,8 @@ public class MirthMigrator {
 			metaData.put("version", element);
 			// and also the description
 			element = new JSONObject();
-			element.put("source", sourceComponent.getString("Description"));
-			element.put("destination", targetComponent.getString("Description"));
+			element.put("source", sourceComponent.has("Description") ? sourceComponent.getString("Description") : "");
+			element.put("destination", targetComponent.has("Description") ? targetComponent.getString("Description") : "");
 			metaData.put("description", element);
 
 			// obtain the details and return them
