@@ -139,7 +139,7 @@ table.parameters tr:last-child {
     display:inline-block;
     font-size: 20px;
     margin-left: 8px;
-    margin-bottom: 18px;
+    margin-bottom: 4px;
 
 }
 
@@ -334,10 +334,6 @@ table.parameters tr:last-child {
     visibility: hidden;
 }
 
-.componentCorrespondance{
-    background-color: coral;
-	cursor: pointer;
-}
 .revisionConflict{
     border: 3px;
     border-color: red;
@@ -889,4 +885,70 @@ input[type="color"]::-webkit-color-swatch {
 /* Create an active/current tablink class */
 .tab button.active {
   background-color: #ccc;
+}
+
+/* context menu for components */
+.contextMenu {
+	min-width: 80px;
+	border: 1px solid #ccc;
+	font-size: 9px;
+	font-family: Arial, sans-serif;
+	padding: 4px 4px;
+	display: none;
+	position: absolute;
+	background: white;
+	border-radius: 4px;
+	margin:auto; 
+    height:auto; 
+	border: 1px solid #ccc;
+	box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+	z-index: 1000;
+}
+.contextMenu ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+.contextMenu ul li {
+	padding: 8px 12px;
+	cursor: pointer;
+}
+.contextMenu ul li:hover {
+	background: #ddd;
+}
+
+/* used when hovering a row */
+.hover {
+	background-color: #e7fbfe !important;
+}
+
+.hoverGroup {
+	font-weight: bold;
+}
+
+/*used when hovering a highlighted row*/
+.hoverHighlight {
+	background-color: #f4ffa6 !important;
+}
+
+.hoverHighlightGroup {
+	font-weight: bold;
+}
+
+.correspondance{
+    background-color: #FF7F50;
+	cursor: pointer;
+}
+
+.correspondanceGroup {
+	font-weight: bold;
+}
+
+.hoverCorrespondance{
+    background-color: #FFC07A;
+	cursor: pointer;
+}
+
+.hoverCorrespondanceGroup {
+	font-weight: bold;
 }
