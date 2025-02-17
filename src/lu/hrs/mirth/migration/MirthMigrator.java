@@ -80,7 +80,7 @@ import org.slf4j.LoggerFactory;
  */
 public class MirthMigrator {
 
-	private final static String version = "1.0.3";
+	private final static String version = "1.1.0";
 	
 	private static String defaultServerName = "localhost";
 	private static int defaultServerPort = 8443;
@@ -4673,7 +4673,8 @@ public class MirthMigrator {
 	public NativeObject compareComponent(String destinationSystem, NativeObject component) {
 		JSONObject sourceComponent = null;
 		JSONObject targetComponent = null;
-
+		String targetComponentId  = null;
+		
 		JSONObject element = null;
 		JSONObject result = new JSONObject();
 		JSONObject metaData = new JSONObject();
@@ -4682,7 +4683,7 @@ public class MirthMigrator {
 		String componentType = (String) component.get("type", null);
 		// and also it's identifier
 		String componentId = (String) component.get("id", null);
-
+		
 		// check if there is a client under the provided system name
 		if (!hasClient(destinationSystem)) {
 			String message = "Mirth system with name\"" + destinationSystem + "\" is unknown. Please adapt Mirth Migrator configuration.";
@@ -4701,11 +4702,19 @@ public class MirthMigrator {
 						"Unable to create a client for the target Mirth instance \"" + destinationSystem + "\": \n" + e.getMessage());
 			}
 
-			// get the component name
-			String componentName = componentType.equals(CODE_TEMPLATE) ? getCodeTemplateNameById(componentId) : getChannelNameById(componentId);
-			// now try to obtain the component from the target Mirth instance
-			String targetComponentId = componentType.equals(CODE_TEMPLATE) ? targetSystem.getCodeTemplateIdByName(componentName) : targetSystem.getChannelIdByName(componentName);	
-
+			// if another component to compare was selected via the context menu
+			if (component.containsKey("targetId")) {
+				// get it's ID
+				targetComponentId = (String) component.get("targetId", null);
+			} else {
+				// No, it wasn't. So use the standard behavior and compare it w/ a component of the same name (and type) in the target system. 
+				// First, the get the component name
+				String componentName = componentType.equals(CODE_TEMPLATE) ? getCodeTemplateNameById(componentId) : getChannelNameById(componentId);
+				// now try to obtain the component ID from the target Mirth instance
+				targetComponentId = componentType.equals(CODE_TEMPLATE) ? targetSystem.getCodeTemplateIdByName(componentName)
+						: targetSystem.getChannelIdByName(componentName);
+			}
+			
 			// get hold of the component at the source system
 			try {
 				sourceComponent = getComponentDetails(componentType, componentId);
