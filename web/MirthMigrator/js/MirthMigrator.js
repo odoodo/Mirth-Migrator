@@ -122,7 +122,10 @@ function systemChanged(systemType){
 			$('#componentTableRight').css('visibility', 'hidden');
 			destBoxShown = false;	
 		}
-
+		
+		// remove potential correspondance highlighting
+		metaDataChecker();
+		
 		// as there is now 1 box left at most, also hide interaction buttons
 		$('#migrateButton').css('visibility', 'hidden');
 		$('#compareButton').css('visibility', 'hidden');
@@ -1020,6 +1023,7 @@ function populateTable(statusCode, displayList, parameters){
 			adjustAvoidReferencedTemplatesOption(isSource);
 			//sets the meta data headers corresponding to the selected row such as component type, name and system
 			setMetaDataHeaders($(this), parameters.systemType);
+			
 			// <CRTL>-key was pressed when row was clicked: highlights the selected row
 			if(event.ctrlKey){
 				// select multiple
@@ -1027,24 +1031,31 @@ function populateTable(statusCode, displayList, parameters){
 				if($("#"+ (isSource ? "tableSource" : "tableDest") + " tbody tr.highlight").length > 1){
 					checkSelection(isSource ? "tableDest" : "tableSource");
 				}
+
+				metaDataChecker($(this), parameters.systemType);
+				
 			} else if(event.shiftKey){
+				
 				// <SHIFT>-key was pressed when line was clicked
 				// select range
 				if($(selectedId).index() > $(this).index()){
 					while($(selectedId).index() > $(this).index()){
 						highlight($(selectedId).prev("tr"), parameters.systemType, true);
 					}
-				}
-				else{	
+				} else{	
 					while($(selectedId).index() < $(this).index()){
 						selectedId = $(selectedId).next("tr");
 						if (!selectedId.length) break;
 						highlight(selectedId, parameters.systemType, true);
 					}
 				}
+				
 				if($("#"+ (isSource ? "tableSource" : "tableDest") + " tbody tr.highlight").length > 1){
 					checkSelection(isSource ? "tableDest" : "tableSource");
 				}
+
+				metaDataChecker($(this), parameters.systemType);
+				
 			} else{
 				// normal click
 				//highlights just this one clicked row
@@ -1068,7 +1079,6 @@ function populateTable(statusCode, displayList, parameters){
 				//calls the ajax function to retrieve information to fill the metadata-table and the content section
 				accessResource("/getComponentDetails", payload, showComponentDetails, {'systemType': parameters.systemType});     
 			}
-
 		});
 		//dragDropTable(parameters.systemType);
 		
@@ -1272,16 +1282,15 @@ function scrollIntoView(tableRow) {
 /**
  * This function is called every time a user clicks, alas highlights a row and checks if there are highlighted elements on the other table.
  * @param {*} correspondingContainer 
- 
- ToDo: Check if really still needed as it is referenced just by 1 location
+
  */
 function checkSelection(correspondingContainer){
     var $selectedRows = $("#"+ correspondingContainer + " tbody tr.highlight");
     if($selectedRows.length > 0){
-            $selectedRows.each(function(i, row){
-				removeHighlighting(this);
-            });
-        }
+		$selectedRows.each(function(i, row){
+			removeHighlighting(this);
+		});
+    }
 }
 /**
  * This function enables the drag and drop functionality for each table.
@@ -1449,6 +1458,12 @@ function metaDataChecker(selectedRow, systemType){
 		}
 	}
 	
+	// remove any highlighted correspondance elements that might exist
+	var selected = sourceTbody.children('tr.correspondance');
+	$(selected).each(function(){
+		removeHighlighting(this);
+	});
+	
 	// if the other table is shown
 	if(destinationTbody){
 		// remove any highlighted elements that might exist
@@ -1457,9 +1472,9 @@ function metaDataChecker(selectedRow, systemType){
 			removeHighlighting(this);
 		});			
 	}
-		
+
 	// if currently a) no row is highlighted, b) no other table shown, or c) multiselect is active
-	if(!selectedRow || !destinationTbody || (sourceTbody.children('tr.highlight').length > 1)){
+	if(!selectedRow || !destinationTbody || (sourceTbody.children('tr.highlight').length)){
 		// do not show the compare button
 		$('#compareButton').css('visibility', 'hidden');
 		// no need to search for a corrsponding item
