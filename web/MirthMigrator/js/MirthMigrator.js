@@ -207,7 +207,7 @@ function populateComponentTables(refresh) {
 }
 
 /**
- * Calles a webservice. If there is no valid session, the user is forced to login, first
+ * Calls a webservice. The user is first forced to login if there is no valid session.
  * @param {*} command - the path of the webservice that should be called
  * @param {*} payload The payload that should be transferred to the server
  * @param {*} action The function that should be called w/ the response from the server
@@ -1099,18 +1099,16 @@ function populateTable(statusCode, displayList, parameters){
 				//key UP pressed
 				case 38:
 					// disable cursor movement at multiselect and when end of table is reached
-					if (($(selectedId).length == 1) && ($(selectedId).index() > 0)){
-						// if the currently active row was hovered
-						if( $(selectedId).attr("class").includes("hoverHighlight")){
-							// remove the highlighting from the hover effect if the cursor moves on
-							$(selectedId).attr("class", $(selectedId).data("hoverClasses"));	
-						}
+					if (($(this).length == 1) && ($(this).index() > 0)){
+						
+						// remove the highlighting from the hover effect if the cursor moves on
+						$(this).attr("class", $(this).data($(this).attr("class").includes("hoverHighlight") ? "hoverClasses" : "standardClasses"));		
+
 						// activate the previous row
-						selectedId = $(selectedId).prev("tr");
-						// trigger click event
-						$(selectedId).click().focus();
+						selectedId = $(this).prev("tr");
+						
 						// and make sure the selected item is still visible
-						scrollIntoView($(selectedId));					
+						scrollIntoView(selectedId);					
 					}
 					break;
 				//key RIGHT pressed
@@ -1122,18 +1120,18 @@ function populateTable(statusCode, displayList, parameters){
 				//key DOWN pressed
 				case 40:
 					// disable cursor movement at multiselect and when end of table is reached
-					if (($(selectedId).length == 1) && ($(selectedId).index() <$(this).closest("tbody").children("tr").length - 1)){
-						// if the currently active row was hovered
-						if( $(selectedId).attr("class").includes("hoverHighlight")){
-							// remove the highlighting from the hover effect if the cursor moves on
-							$(selectedId).attr("class", $(selectedId).data("hoverClasses"));	
-						}
+					if (($(this).length == 1) && ($(this).index() <$(this).closest("tbody").children("tr").length - 1)){
+						
+						// remove the highlighting from the hover effect if the cursor moves on
+						$(this).attr("class", $(this).data($(this).attr("class").includes("hoverHighlight") ? "hoverClasses" : "standardClasses"));	
+
 						// activate the next row
-						selectedId = $(selectedId).next("tr");
-						// trigger click event
-						$(selectedId).click().focus();
+						selectedId = $(this).next("tr");
+						
+						// activate the next row
+						selectedId = $(this).next("tr");
 						// and make sure the selected item is still visible
-						scrollIntoView($(selectedId));					
+						scrollIntoView(selectedId);					
 					}
 
 					break;	
@@ -1248,6 +1246,7 @@ function setCheckBoxes(componentType){
         document.getElementById("destCheckBox").style.display= "none";
     }
 }
+
 /**
  * Assures that the selected table row remains visible
  * 
@@ -1255,29 +1254,30 @@ function setCheckBoxes(componentType){
  */
 function scrollIntoView(tableRow) {
 
-	var table = tableRow.closest("tbody");
+	// div containing the table
 	var container = tableRow.closest("div");
-	// determine row location of the DOM element
-	var rowLocation = tableRow[0].getBoundingClientRect();
-	// the same for the table body
-	var tableLocation = table[0].getBoundingClientRect();
-	// and the containing div
-	var containerLocation = container[0].getBoundingClientRect();
-	
-	var rowTop = ~~rowLocation.top;
-	var rowBottom = ~~rowLocation.bottom;
-	var containerTop = ~~containerLocation.top;
-	var containerBottom = ~~containerLocation.bottom;
-	var rowHeight = (rowBottom-rowTop);
-	var containerHeight = (containerBottom-containerTop);
-	
-    // Check if the row is out of view
-    if (rowTop < containerTop) {
-		container.animate({scrollTop: tableRow.offset().top - container.offset().top + container.scrollTop()}, 1);
-    } else if (rowTop+rowHeight > containerBottom) {
-		container.animate({scrollTop: container.offset().top + container.outerHeight()- rowHeight}, 1);
-    }
+	// position of visible upper table border
+	var containerTop = container.scrollTop();
+	// position of visible lower table border
+	var containerBottom = containerTop + container.height();
+	// position of of currently selected table row upper border
+	var rowTop = tableRow.position().top;
+	// position of of currently selected table row lower border	
+	var rowBottom = rowTop + tableRow.outerHeight();
+
+	// leaving the upper border
+	if (containerTop > rowTop) {
+		// Scroll up
+		container.scrollTop(containerTop - (containerTop - rowTop));
+		
+	// leaving the lower border
+	} else if (containerBottom < rowBottom) {
+		// Scroll down
+		container.scrollTop(containerTop + (rowBottom - containerBottom));
+	}
+	tableRow.click();
 }
+
 
 /**
  * This function is called every time a user clicks, alas highlights a row and checks if there are highlighted elements on the other table.
@@ -1350,7 +1350,7 @@ function setMetaDataHeaders($row, systemType){
  * @param tableRow the row form which the highlighting should be removed
  */
 function removeHighlighting(tableRow){
-//yyy
+ 
 	if(!(tableRow instanceof jQuery)){
 		tableRow = $(tableRow);
 	}
@@ -1377,13 +1377,12 @@ function highlight(row, systemType, multiSelectKeysPressed) {
     var tableID = leftToRight ? "sourceComponents" : "destComponents";
     var tbody = $("#" + tableID + " tbody");
 	// all items that are already selected 
-    var selected = tbody.children('tr.highlight');
+    var selected = tbody.children('tr.highlight, tr.hoverHighlight');
 	
 	var alreadyHighlighted = row.attr("class").includes("hoverHighlight") || row.attr("class").includes("highlight");
 
 	// items have been selected before but multi-row select keys are currently not pressed.
     if(!multiSelectKeysPressed){
-
 		// deselect all currently selected items besides if the currently selected item was pressed again
 		$(selected).each(function(){
 			removeHighlighting(this);
@@ -1420,6 +1419,7 @@ function highlight(row, systemType, multiSelectKeysPressed) {
 			row.attr("class", row.data("highlightClasses"));
 		}
         selectedId = "#" + row.attr('id');
+		row.focus();
     }
 }
 
@@ -1458,11 +1458,25 @@ function metaDataChecker(selectedRow, systemType){
 		}
 	}
 	
-	// remove any highlighted correspondance elements that might exist
-	var selected = sourceTbody.children('tr.correspondance');
-	$(selected).each(function(){
-		removeHighlighting(this);
-	});
+	// if no system type was provided
+	if(!systemType){
+		// address both tables anyway for being able to disable highlighting
+		if($('#componentTableLeft').css('visibility') == 'visible'){
+			sourceTbody = $("#sourceComponents tbody");	
+		}		
+		if($('#componentTableRight').css('visibility') == 'visible'){
+			destinationTbody = $("#destComponents tbody");
+		}
+	}
+
+	// if a table is visible
+	if(sourceTbody){
+		// remove any highlighted correspondance elements that might exist
+		var selected = sourceTbody.children('tr.correspondance');
+		$(selected).each(function(){
+			removeHighlighting(this);
+		});
+	}
 	
 	// if the other table is shown
 	if(destinationTbody){
@@ -1474,9 +1488,11 @@ function metaDataChecker(selectedRow, systemType){
 	}
 
 	// if currently a) no row is highlighted, b) no other table shown, or c) multiselect is active
-	if(!selectedRow || !destinationTbody || (sourceTbody.children('tr.highlight').length)){
+	if(!systemType || !selectedRow || !destinationTbody || !sourceTbody || (sourceTbody.children('tr.highlight').length > 1)){
 		// do not show the compare button
 		$('#compareButton').css('visibility', 'hidden');
+		
+		$(correspondingRow).focus();
 		// no need to search for a corrsponding item
 		return;
 	}
@@ -2467,7 +2483,7 @@ function activateHoverEffect(){
 				$(this).attr("class", $(this).data("highlightClasses"));
 			} else if($(this).attr("class").includes("hoverCorrespondance")){
 				// the current row was highlighted as a component that corresponds to a component of the other table. Use the corresponding highlight appearance
-				$(this).attr("class", $(this).data("correspondanceClasses"));		
+				$(this).attr("class", $(this).data("correspondanceClasses"));			
 			}else{
 				// the current $(this) was not hovered set it back to standard appearance
 				$(this).attr("class", $(this).data("standardClasses"));
