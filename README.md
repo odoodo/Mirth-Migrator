@@ -46,7 +46,7 @@ When you access Mirth Migrator, it asks you to <b>log in</b>. Simply <b>use your
 If you have any questions or suggestions about Mirth Migrator, you can either post them <a href='https://github.com/odoodo/Mirth-Migrator/discussions'>here in the discussion</a> or in the release thread in one of the Mirth forums <a href='https://forums.mirthproject.io/forum/mirth-connect/support/185227-release-mirth-migrator'>here</a> or <a href='https://github.com/nextgenhealthcare/connect/discussions/6345'>here</a>.
 
 <h2>Documentation</h2>
-Can be found in the <a href="https://github.com/odoodo/Mirth-Migrator/discussions/15">Wiki-section</a>. Documentation will be expanded over time.
+Can be found in the <a href="https://github.com/odoodo/Mirth-Migrator/wiki">Wiki-section</a>. Documentation will be expanded over time.
 
 <h2>Kudos</h2>
 Mirth Migrator makes use of a number of other open source projects:
