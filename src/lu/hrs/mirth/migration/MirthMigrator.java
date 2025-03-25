@@ -227,7 +227,11 @@ public class MirthMigrator {
 	/**
 	 * Detects all name tags
 	 */
-	private final static Pattern nameTagDetectionPattern = Pattern.compile("<name>.*?</name>", Pattern.DOTALL);
+	private final static Pattern nameTagDetectionPattern = Pattern.compile("<name>(.*?)</name>", Pattern.DOTALL);
+	/**
+	 * Detects channel id tags
+	 */
+	private final static Pattern channelIdTagDetectionPattern = Pattern.compile("<channelId>(.*?)</channelId>", Pattern.DOTALL);
 	/**
 	 * Detects all empty tags (often used for encapsulating SQL)
 	 */
@@ -300,6 +304,11 @@ public class MirthMigrator {
 	 * This pattern is used to find a channel tag
 	 */
 	private final static Pattern channelTagPattern = Pattern.compile("<channelTag[\\s\\S]*?<\\/channelTag>");
+	
+	/**
+	 * This pattern is used to find a channel tag
+	 */
+	private final static Pattern channelChildStatusPattern = Pattern.compile("<childStatuses>[\\s\\S]*?</childStatuses>");
 
 	/**
 	 * This pattern is used to find a inter-channel dependency
@@ -329,7 +338,12 @@ public class MirthMigrator {
 	/**
 	 * This pattern is used to find channel references
 	 */
-	private final static Pattern channelIdPattern = Pattern.compile("<channelIds[\\s\\S]*?<\\/channelIds>");
+	private final static Pattern channelIdsPattern = Pattern.compile("<channelIds[\\s\\S]*?<\\/channelIds>");
+
+	/**
+	 * This pattern is used to find all relevant information about the current channel state (stopped, running, paused, etc.)
+	 */
+	private final static Pattern channelStatePattern = Pattern.compile("<dashboardStatus>[\\s\\S]*?<channelId>([\\s\\S]*?)</channelId>[\\s\\S]*?<name>([\\s\\S]*?)</name>[\\s\\S]*?<state>([\\s\\S]*?)</state>[\\s\\S]*?</dashboardStatus>");
 
 	/**
 	 * This pattern is used to find channel definitions
@@ -2919,7 +2933,7 @@ public class MirthMigrator {
 
 			// try to load caches
 			HashMap<String, Long> channelLastModified = getChannelLastModified(false);
-			HashMap<String, Boolean> channeState = getChannelState(false);
+			HashMap<String, Boolean> channeState = getChannelMetadata(false);
 
 			// assure that an array will be used
 			JSONArray channels = (raw.get("channel") instanceof JSONArray) ? raw.getJSONArray("channel") : (new JSONArray()).put(raw.get("channel"));
@@ -3192,7 +3206,7 @@ public class MirthMigrator {
 	 *            A flag that causes, when set to true, the cache to reload regardless of its pre-existence
 	 * @return The state cache for all channels or an empty cache if the Mirth server does not support the metadata web-service or is not reachable
 	 */
-	private HashMap<String, Boolean> getChannelState(boolean forceReload) {
+	private HashMap<String, Boolean> getChannelMetadata(boolean forceReload) {
 		if (forceReload || (this.channelState == null)) {
 			cacheChannelMetaData();
 		}
@@ -5109,6 +5123,142 @@ public class MirthMigrator {
 	}
 	
 	/**
+	 * Provides the state of channels
+	 * 
+	 * @param channelId
+	 *            An array of IDs of channels for which the current state is requested. If none is provided, the function return the state of all
+	 *            deployed channels (<i>Optional</i>)
+	 * @return a JSON array with the following structure:
+	 *         <ul>
+	 *         <li><b>id</b> - The channel ID</li>
+	 *         <li><b>state</b> - The current state of the channel:
+	 *         <ul>
+	 *         <li><b>1</b> - stopped</li>
+	 *         <li><b>2</b> - started</li>
+	 *         <li><b>3</b> - paused</li>
+	 *         <li><b>4</b> - halted</li>
+	 *         <li><b>1a</b> - stopping</li>
+	 *         <li><b>2a</b> - starting</li>
+	 *         <li><b>3a</b> - pausing</li>
+	 *         <li><b>4a</b> - halting</li>
+	 *         </ul>
+	 *         </li>
+	 *         </ul>
+	 * @throws ServiceUnavailableException 
+	 */
+	public NativeObject getChannelState(NativeArray channelIds) throws ServiceUnavailableException {
+
+		
+		String requestBody = null;
+		String channelStatusList = null;
+		
+		// if there is a list of channel IDs
+		if (channelIds != null) {
+			// open the set
+		    StringBuilder payload = new StringBuilder("<set>");
+		    // assemble a request body containing the IDs of all channels for which the status should be obtained
+		    for (int index = 0; index < channelIds.getLength(); index++) {
+		        // add the id of the next channel to the request body
+		        payload.append("<string>").append(channelIds.get(index, null)).append("</string>");
+		    }
+		    // close the set
+		    payload.append("</set>");
+		    
+		    // convert to the request body
+		    requestBody = payload.toString();
+		    
+		    // call the webservice
+			channelStatusList = getResponseAsXml(connectToRestService("/api/channels/statuses/_getChannelStatusList"), requestBody);
+			
+		} else {
+			// no ID list has been provided, request the status of all channels
+			channelStatusList = getResponseAsXml(connectToRestService("/api/channels/statuses"));
+		}
+		
+		
+		// remove unneeded nested elements
+		channelStatusList = channelChildStatusPattern.matcher(channelStatusList).replaceAll("");
+		
+		JSONArray stateList = new JSONArray();
+		
+		// now extract the state of every deployed channel
+		Matcher channelStateMatcher = channelStatePattern.matcher(channelStatusList);
+		while(channelStateMatcher.find()) {
+			// get the id of the channel
+			String channelId = channelStateMatcher.group(1);
+			// it's name (not yet needed but anyway)
+			String name = channelStateMatcher.group(2);
+			// and finally it's state
+			String state = channelStateMatcher.group(2);
+			// create a new object
+			JSONObject newEntry = new JSONObject();
+			newEntry.put("id", channelId);
+			newEntry.put("name", name);
+			newEntry.put("state", state);
+			stateList.put(newEntry);
+		}
+
+		return createReturnValue(200, stateList);
+	}
+	
+	/**
+	 * Provides the state of a channel
+	 * 
+	 * @param channelId
+	 *            The ID of the channel for which the status should be obtained
+	 * @return a JSON array with the following structure:
+	 *         <ul>
+	 *         <li><b>id</b> - The channel ID</li>
+	 *         <li><b>state</b> - The current state of the channel:
+	 *         <ul>
+	 *         <li><b>1</b> - stopped</li>
+	 *         <li><b>2</b> - started</li>
+	 *         <li><b>3</b> - paused</li>
+	 *         <li><b>4</b> - halted</li>
+	 *         <li><b>1a</b> - stopping</li>
+	 *         <li><b>2a</b> - starting</li>
+	 *         <li><b>3a</b> - pausing</li>
+	 *         <li><b>4a</b> - halting</li>
+	 *         </ul>
+	 *         </li>
+	 *         </ul>
+	 * @throws ServiceUnavailableException 
+	 */
+	public NativeObject getChannelState(String channelId) throws ServiceUnavailableException, ParseException {
+		if((channelId == null) || channelId.isEmpty()) {
+			createReturnValue(500, "There was no channel ID provided");
+		}
+		
+		return  getChannelState((NativeArray) jsonParser.parseValue("[\""+channelId+"\"]"));
+	}
+
+	/**
+	 * Sets the state of channels
+	 * @param channelId An array of IDs of channels for which the current state should be set.
+	 * @return a JSON array with the following structure:
+	 *         <ul>
+	 *         <li><b>id</b> - The channel ID</li>
+	 *         <li><b>state</b> - The current state of the channel:
+	 *         <ul>
+	 *         <li><b>1</b> - stopped</li>
+	 *         <li><b>2</b> - started</li>
+	 *         <li><b>3</b> - paused</li>
+	 *         <li><b>4</b> - halted</li>
+	 *         <li><b>1a</b> - stopping</li>
+	 *         <li><b>2a</b> - starting</li>
+	 *         <li><b>3a</b> - pausing</li>
+	 *         <li><b>4a</b> - halting</li>
+	 *         </ul>
+	 *         </li>
+	 *         <li><b>reason</b> - A description of the error that occurred while trying to change the channel state <i>(optional)</i></li>
+	 *         </ul>
+	 */
+	public NativeObject setChannelState(NativeArray channelId) {
+		
+		return null;		
+	}
+
+	/**
 	 * Migrates components of this system to a target system
 	 * 
 	 * @param destinationSystem
@@ -5218,7 +5368,7 @@ public class MirthMigrator {
 				}
 			}
 
-			return createReturnValue(500, migrationReport);
+			return createReturnValue(200, migrationReport);
 
 		} catch (IOException e) {
 			return createReturnValue(500, e.getMessage());
@@ -5802,7 +5952,6 @@ public class MirthMigrator {
 		try {
 			// if no valid connection is available
 			responseCode = connection.getResponseCode();
-
 			// this usually means no valid session and is e.g. the case if the service had been restarted
 			if (responseCode == 401) {
 				String message = "Response stream is not available - re-login is needed (" + responseCode + ")";
@@ -5855,7 +6004,8 @@ public class MirthMigrator {
 			// assemble the response and return it
 			result.put("responseCode", connection.getResponseCode());
 			result.put("successful", true);
-			result.put("responseMessage", sb.toString().replaceAll("(encoding=\"base64\">)[^<]+", "$1REMOVED"));
+//			result.put("responseMessage", sb.toString().replaceAll("(encoding=\"base64\">)[^<]+", "$1REMOVED"));
+			result.put("responseMessage", sb.toString());
 
 			return result;
 		} catch (IOException e) {
@@ -5882,7 +6032,7 @@ public class MirthMigrator {
 	private String getResponseAsXml(HttpURLConnection restService) throws ServiceUnavailableException {
 
 		// try to execute the query
-		JSONObject response = getResponseAsXml(restService, getServerSessionCookie());
+		JSONObject response = getAsXml(restService, getServerSessionCookie());
 
 		if (response.getInt("responseCode") == 400) {
 
@@ -5893,13 +6043,45 @@ public class MirthMigrator {
 				// connection needs to be reestablished
 				restService = connectToRestService(serviceUrl);
 				// try to re-execute the query
-				response = getResponseAsXml(restService, getServerSessionCookie());
+				response = getAsXml(restService, getServerSessionCookie());
 			}
 		}
 
 		return response.getBoolean("successful") ? response.getString("responseMessage") : "";
 	}
+	
+	
+	/**
+	 * Retrieves the response of a rest request in xml format
+	 * 
+	 * @param restService
+	 *            The connection to the rest service
+	 * @return The response in xml format or an empty string if no result could be retrieved
+	 * @throws ServiceUnavailableException
+	 * @throws IOException
+	 */
+	private String getResponseAsXml(HttpURLConnection restService, String payload) throws ServiceUnavailableException {
 
+		// try to execute the query
+		JSONObject response = getAsXml(restService, getServerSessionCookie(), payload);
+
+		if (response.getInt("responseCode") == 400) {
+
+			// if re-login was successful
+			if (createServerSession()) {
+				restService.disconnect();
+				String serviceUrl = restService.getURL().getPath();
+				// connection needs to be reestablished
+				restService = connectToRestService(serviceUrl);
+				// try to re-execute the query
+				response = getAsXml(restService, getServerSessionCookie(), payload);
+			}
+		}
+
+		return response.getBoolean("successful") ? response.getString("responseMessage") : "";
+	}
+	
+	
 	/**
 	 * Retrieves the response of the rest request in xml format
 	 * 
@@ -5918,14 +6100,52 @@ public class MirthMigrator {
 	 *             If the Mirth instance is not available
 	 * @throws ProtocolException
 	 */
-	private static JSONObject getResponseAsXml(HttpURLConnection restService, String sessionCookie) throws ServiceUnavailableException {
+	private static JSONObject getAsXml(HttpURLConnection restService, String sessionCookie) throws ServiceUnavailableException {
+		return getAsXml(restService, sessionCookie, null);
+	}
+
+	/**
+	 * Retrieves the response of the rest request in xml format
+	 * 
+	 * @param restService
+	 *            The connection to the rest service
+	 * @param sessionCookie
+	 *            The cookie that identifies an active session
+	 * @param payload
+	 *            The payload that should be sent to the server
+	 * @return A JSON object containing the following attributes:
+	 *         <ul>
+	 *         <li><b>responseCode</b> - The HTTP response code</li>
+	 *         <li><b>successful</b> - true if the action was successful, false otherwise</li>
+	 *         <li><b>responseMessage</b> - The response from the server, if the communication was successful. Otherwise the error message</li>
+	 *         </ul>
+	 * @throws IOException
+	 * @throws ServiceUnavailableException
+	 *             If the Mirth instance is not available
+	 * @throws ProtocolException
+	 */
+	private static JSONObject getAsXml(HttpURLConnection restService, String sessionCookie, String payload) throws ServiceUnavailableException {
 
 		try {
-			// no worries this method is correct
-			restService.setRequestMethod("GET");
+
+			restService.setDoInput(true);
 			restService.setRequestProperty("Accept", "application/xml");
 			restService.setRequestProperty("X-Requested-With", MirthMigrator.clientIdentifier);
 			restService.setRequestProperty("Cookie", sessionCookie);
+			if(payload != null) {
+				// as there is payload, put-method has to be used
+				restService.setRequestMethod("POST");
+				restService.setDoOutput(true);
+				// send the payload to the server
+				try {
+					restService.getOutputStream().write(payload.getBytes(StandardCharsets.UTF_8));
+				} catch (IOException e) {
+					throw new ServiceUnavailableException(String.format("Service at %s:%d is currently not available", restService.getURL().getHost(), restService.getURL().getPort()));
+				}
+			} else {
+				// no worries this method is correct
+				restService.setRequestMethod("GET");	
+			}
 		} catch (ProtocolException e) {
 		} catch (IllegalStateException e2) {
 			// this exception is thrown if the server was unavailable before and a re-login had to be issued.
@@ -5986,7 +6206,7 @@ public class MirthMigrator {
 	 */
 	private static JSONObject getResponseAsJson(HttpURLConnection restService, String sessionCookie) throws ServiceUnavailableException {
 		// fetch the data
-		JSONObject response = getResponseAsXml(restService, sessionCookie);
+		JSONObject response = getAsXml(restService, sessionCookie);
 
 		if (response.getBoolean("successful")) {
 			// change the return value to JSON
@@ -7594,7 +7814,7 @@ public class MirthMigrator {
 			String sourceSystemTagCode = tagMatcher.group();
 
 			// try to get hold of channel references
-			channelIdMatcher = channelIdPattern.matcher(sourceSystemTagCode);
+			channelIdMatcher = channelIdsPattern.matcher(sourceSystemTagCode);
 			// if no channel references were found
 			if (!channelIdMatcher.find()) {
 				// go on w/ the next tag
