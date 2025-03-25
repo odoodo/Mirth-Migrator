@@ -5189,7 +5189,7 @@ public class MirthMigrator {
 			// it's name (not yet needed but anyway)
 			String name = channelStateMatcher.group(2);
 			// and finally it's state
-			String state = channelStateMatcher.group(2);
+			String state = channelStateMatcher.group(3);
 			// create a new object
 			JSONObject newEntry = new JSONObject();
 			newEntry.put("id", channelId);
