@@ -55,22 +55,29 @@
 						<option  class="disabledOption" value="Please select a System" disabled="disabled" selected="selected">Please select a System</option>
 					</select>	
 				</div>
-				<div id="compTypeSelect" style="display: flex; align-items: center;">
+			<div id="compTypeSelect0" style="align-items: left;">
+			<b>Choose:</b>
+				<div id="compTypeSelectx" style="align-items: left;">
 					<input type="radio" id="channels" class="select" name="compType" value="channelGroup" onclick="populateComponentTables()" style="vertical-align: center;"> 
 						<label style="font-size: 1.2rem;" for="channels" style="vertical-align: center;"> Channels
 						</label>
 					</input>
+		
+<br>
+
 					<input type="radio" id="codeTemplates" class="select" name="compType" value="codeTemplateLibrary" onclick="populateComponentTables()"  style="vertical-align: center;">
 						<label style="vertical-align:baseline;font-size: 1.2rem;"  for="codeTemplates"> Code&nbsp;templates/Functions
 						</label>
 					 </input>
 				</div>
+			</div>
 				<div id="destSelection" class="selectionSection"> 
 					<h2 style="float:left;font-size: 1.2vw;"> Mirth Instance B:</h2>
 					<select id="destSystem" class="" onchange="systemChanged(this.id)">
 						<option  class="disabledOption" value="Please select a System" disabled="disabled" selected="selected">Please select a System</option>
 					</select>
 				</div>
+
 				<div class="flexBoxLegend">
 						<ul id="environments"></ul>
 				</div>
