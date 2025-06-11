@@ -189,9 +189,13 @@ function populateComponentTables(refresh) {
 		
 		if(componentType == 'channelGroup'){
 // zzz
+ 
 			// load the status of the channels
 			// activate the automatic status update for channels
-			 INTERVAL_ID = setInterval(requestChannelStatusUpdates, refreshIntervalInSeconds * 1000);
+			if(!INTERVAL_ID){
+				INTERVAL_ID = setInterval(requestChannelStatusUpdates, refreshIntervalInSeconds * 1000);
+			}
+
 		} else{
 			// deactivate the automatic status update for code templates
 			if(INTERVAL_ID){
