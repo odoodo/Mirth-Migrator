@@ -1,16 +1,17 @@
 <channel version="3.7.1">
   <id>51789745-f3c2-41a8-b631-cc44c640d22f</id>
-  <nextMetaDataId>14</nextMetaDataId>
+  <nextMetaDataId>15</nextMetaDataId>
   <name>MIRTH_MIGRATOR</name>
   <description>This channel allows the migration of mirth channels, code templates, channel groups and code template libraries between mirth systems.&#xd;
 &#xd;
 Please check https://github.com/odoodo/Mirth-Migrator for further details.&#xd;
 &#xd;
 Version:&#xd;
+20250611: added support for displaying the state of all or specific channels&#xd;
 20241030: added auto-detection of API port used by the host Mirth instance&#xd;
 20240822: added support for configuration frontend&#xd;
 20240521: initial version</description>
-  <revision>500</revision>
+  <revision>521</revision>
   <sourceConnector version="3.7.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -83,14 +84,14 @@ Version:&#xd;
         <com.mirth.connect.connectors.http.HttpStaticResource>
           <contextPath>/MirthMigrator</contextPath>
           <resourceType>FILE</resourceType>
-          <value>./web/MirthMigrator/html/index.html</value>
+          <value>./web/MirthMigrator/html/iindex.html</value>
           <contentType>text/html</contentType>
         </com.mirth.connect.connectors.http.HttpStaticResource>
         <com.mirth.connect.connectors.http.HttpStaticResource>
           <contextPath>/favicon.ico</contextPath>
-          <resourceType>CUSTOM</resourceType>
-          <value></value>
-          <contentType>text/plain</contentType>
+          <resourceType>FILE</resourceType>
+          <value>./web/MirthMigrator/img/favicon.ico</value>
+          <contentType>image/x-icon</contentType>
         </com.mirth.connect.connectors.http.HttpStaticResource>
         <com.mirth.connect.connectors.http.HttpStaticResource>
           <contextPath>/img</contextPath>
@@ -134,6 +135,9 @@ Version:&#xd;
           <script>var ignoreConfigurationException = false;
 
 switch (sourceMap.get(&apos;contextPath&apos;) + &apos;&apos;) {
+	case &apos;/getChannelState&apos;:
+		destination = 14;
+		break;	
 	case &apos;/getComponentMetaData&apos;:
 		destination = 1;
 		break;
@@ -1561,6 +1565,114 @@ responseMap.put(&apos;response&apos;, JSON.stringify({&apos;version&apos;: versi
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
+    <connector version="3.7.1">
+      <metaDataId>14</metaDataId>
+      <name>getChannelState</name>
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="3.7.1">
+        <pluginProperties/>
+        <destinationConnectorProperties version="3.7.1">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+            <entry>
+              <string>a3a37aa1-ad7e-4825-a561-c2cec889e4c7</string>
+              <string>Mirth Migrator</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <script>/**
+* Provides the state of all or specific channels
+*/</script>
+      </properties>
+      <transformer version="3.7.1">
+        <elements>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="3.7.1">
+            <name>Get the state of all or specific channels</name>
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>const MirthMigrator = Packages.lu.hrs.mirth.migration.MirthMigrator;
+
+var channelState = null;
+var result = [];
+
+msg.forEach(system =&gt; {
+	// get hold of the required mirth client
+	var mirthClient = MirthMigrator.getClient(system.name);
+	logger.info(&apos;Client is &apos;+mirthClient);
+	// fetch the component details
+	channelState = mirthClient.getChannelState(system.channel);
+	//create an info element for the current system
+	var stateInfo = {&apos;name&apos;: system.name, &apos;status&apos;: channelState.payload, &apos;fullList&apos;: !system.channel};
+	// and add it to the result list
+	result.push(stateInfo);
+});
+
+// set the status code
+channelMap.put(&apos;responseStatusCode&apos;, channelState.statusCode + &apos;&apos;);
+	logger.info(&apos;Return value is &apos;+JSON.stringify(result));
+
+// and send the response back to the client
+responseMap.put(&apos;response&apos;, JSON.stringify(result));</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        </elements>
+        <inboundTemplate encoding="base64">ewoJInN5c3RlbSI6ICJtaXJ0aDFhcGR2IiwKCSJjb21wb25lbnRUeXBlIjogImNvZGVUZW1wbGF0
+ZSIsCgkiY29tcG9uZW50SWQiOiAiOGY3ODA3Y2UtM2NjZS00ZWZjLWE4ZjMtMzlhZWNmOTI1OWRh
+Igp9</inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>JSON</inboundDataType>
+        <outboundDataType>JSON</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.json.JSONDataTypeProperties" version="3.7.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.json.JSONBatchProperties" version="3.7.1">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.json.JSONDataTypeProperties" version="3.7.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.json.JSONBatchProperties" version="3.7.1">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="3.7.1">
+        <elements/>
+        <inboundDataType>JSON</inboundDataType>
+        <outboundDataType>JSON</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.json.JSONDataTypeProperties" version="3.7.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.json.JSONBatchProperties" version="3.7.1">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.json.JSONDataTypeProperties" version="3.7.1">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.json.JSONBatchProperties" version="3.7.1">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="3.7.1">
+        <elements/>
+      </filter>
+      <transportName>JavaScript Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>false</waitForPrevious>
+    </connector>
   </destinationConnectors>
   <preprocessingScript>return message || &apos;{}&apos;;</preprocessingScript>
   <postprocessingScript>return;</postprocessingScript>
@@ -1680,7 +1792,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1730726760866</time>
+        <time>1749645623445</time>
         <timezone>Europe/Berlin</timezone>
       </lastModified>
       <pruningSettings>
