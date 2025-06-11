@@ -5125,35 +5125,47 @@ public class MirthMigrator {
 	/**
 	 * Provides the state of channels
 	 * 
-	 * @param channelId
-	 *            An array of IDs of channels for which the current state is requested. If none is provided, the function return the state of all
+	 * @param channel
+	 *            A single ID or an array of IDs of channels for which the current state is requested. If none is provided, the function return the state of all
 	 *            deployed channels (<i>Optional</i>)
 	 * @return a JSON array with the following structure:
 	 *         <ul>
 	 *         <li><b>id</b> - The channel ID</li>
 	 *         <li><b>state</b> - The current state of the channel:
 	 *         <ul>
-	 *         <li><b>1</b> - stopped</li>
-	 *         <li><b>2</b> - started</li>
-	 *         <li><b>3</b> - paused</li>
-	 *         <li><b>4</b> - halted</li>
-	 *         <li><b>1a</b> - stopping</li>
-	 *         <li><b>2a</b> - starting</li>
-	 *         <li><b>3a</b> - pausing</li>
-	 *         <li><b>4a</b> - halting</li>
+	 *         <li><b>STOPPED</b></li>
+	 *         <li><b>STARTED</b></li>
+	 *         <li><b>PAUSED</b></li>
+	 *         <li><b>STOPPING</b></li>
+	 *         <li><b>STARTING</b></li>
+	 *         <li><b>PAUSING</b></li>
+	 *         <li><b>HALTING</b></li>
 	 *         </ul>
 	 *         </li>
 	 *         </ul>
 	 * @throws ServiceUnavailableException 
+	 * @throws ParseException 
 	 */
-	public NativeObject getChannelState(NativeArray channelIds) throws ServiceUnavailableException {
+	public NativeObject getChannelState(Object channel) throws ServiceUnavailableException, ParseException {
 
 		
 		String requestBody = null;
 		String channelStatusList = null;
+		NativeArray channelIds = null;
+		
+		// checks if the status of only specific channels or of all channels should be obtained
+		boolean onlySpecificChannels = (channel != null) && ((channel instanceof String) || (channel instanceof NativeArray));
 		
 		// if there is a list of channel IDs
-		if (channelIds != null) {
+		if (onlySpecificChannels) {
+			// if there was only 1 ID provided
+			if(channel instanceof String) {
+				// create an array
+				channelIds = (NativeArray) jsonParser.parseValue("[\"" + channel + "\"]");
+			} else {
+				channelIds = (NativeArray) channel;
+			}
+
 			// open the set
 		    StringBuilder payload = new StringBuilder("<set>");
 		    // assemble a request body containing the IDs of all channels for which the status should be obtained
@@ -5179,7 +5191,7 @@ public class MirthMigrator {
 		// remove unneeded nested elements
 		channelStatusList = channelChildStatusPattern.matcher(channelStatusList).replaceAll("");
 		
-		JSONArray stateList = new JSONArray();
+		JSONObject stateList = new JSONObject();
 		
 		// now extract the state of every deployed channel
 		Matcher channelStateMatcher = channelStatePattern.matcher(channelStatusList);
@@ -5187,50 +5199,16 @@ public class MirthMigrator {
 			// get the id of the channel
 			String channelId = channelStateMatcher.group(1);
 			// it's name (not yet needed but anyway)
-			String name = channelStateMatcher.group(2);
+	//		String name = channelStateMatcher.group(2);
 			// and finally it's state
 			String state = channelStateMatcher.group(3);
-			// create a new object
-			JSONObject newEntry = new JSONObject();
-			newEntry.put("id", channelId);
-			newEntry.put("name", name);
-			newEntry.put("state", state);
-			stateList.put(newEntry);
+			// add the channel state
+			stateList.put(channelId, state);
 		}
 
 		return createReturnValue(200, stateList);
 	}
-	
-	/**
-	 * Provides the state of a channel
-	 * 
-	 * @param channelId
-	 *            The ID of the channel for which the status should be obtained
-	 * @return a JSON array with the following structure:
-	 *         <ul>
-	 *         <li><b>id</b> - The channel ID</li>
-	 *         <li><b>state</b> - The current state of the channel:
-	 *         <ul>
-	 *         <li><b>1</b> - stopped</li>
-	 *         <li><b>2</b> - started</li>
-	 *         <li><b>3</b> - paused</li>
-	 *         <li><b>4</b> - halted</li>
-	 *         <li><b>1a</b> - stopping</li>
-	 *         <li><b>2a</b> - starting</li>
-	 *         <li><b>3a</b> - pausing</li>
-	 *         <li><b>4a</b> - halting</li>
-	 *         </ul>
-	 *         </li>
-	 *         </ul>
-	 * @throws ServiceUnavailableException 
-	 */
-	public NativeObject getChannelState(String channelId) throws ServiceUnavailableException, ParseException {
-		if((channelId == null) || channelId.isEmpty()) {
-			createReturnValue(500, "There was no channel ID provided");
-		}
-		
-		return  getChannelState((NativeArray) jsonParser.parseValue("[\""+channelId+"\"]"));
-	}
+
 
 	/**
 	 * Sets the state of channels
