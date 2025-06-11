@@ -65,8 +65,6 @@ var activityCounter = 0;
 */
 var pendingRequests = [];
 
-
-
 /**
  * Starts an activity and replaces the normal mouse cursor by the busy mouse cursor
  */
@@ -129,9 +127,15 @@ function systemChanged(systemType){
 		// as there is now 1 box left at most, also hide interaction buttons
 		$('#migrateButton').css('visibility', 'hidden');
 		$('#compareButton').css('visibility', 'hidden');
+		
 		// only hide refresh button if no box is shown anymore
 		if(!sourceBoxShown && !destBoxShown){
 			$('#flexBoxButtons').css('visibility', 'hidden');
+			// and also deactivate status update for channels
+			if(INTERVAL_ID){
+				clearInterval(INTERVAL_ID);
+				INTERVAL_ID =  null;
+			}
 		}
 		
 		// and also all component detail information. 
@@ -177,11 +181,25 @@ function populateComponentTables(refresh) {
 		//The tables are displayed, when the component type has been selected.
 		if(!componentTypeIsSelected) 
 		{
-			componentTypeIsSelected=true;
+			componentTypeIsSelected = true;
 			$("#sourceSelection").css("visibility", "visible");
 			$("#destSelection").css("visibility", "visible");
 		}
 		var componentType = $('input[name = "compType"]:checked').val();
+		
+		if(componentType == 'channelGroup'){
+// zzz
+			// load the status of the channels
+			// activate the automatic status update for channels
+			 INTERVAL_ID = setInterval(requestChannelStatusUpdates, refreshIntervalInSeconds * 1000);
+		} else{
+			// deactivate the automatic status update for code templates
+			if(INTERVAL_ID){
+				clearInterval(INTERVAL_ID);
+				INTERVAL_ID = null;
+			}
+		}
+		
 		var payload;
 
 		// if a system for the left box was choosen
@@ -900,8 +918,9 @@ function setSelectionHeaders(systemType, displayList)
 /**
  * This function populates a table
  * @param {*} statusCode
- * @param {*} displayList
- * @param {*} parameters
+ * @param {*} displayList A list of items that should be displayed in the table
+ * @param {*} parameters Addtional paramters that should be passed to the function:
+ <ul><li><b>systemType</b> - Identification of the table: either the left (sourceSystem) or the right (destSystem)</li></ul>
  */
 function populateTable(statusCode, displayList, parameters){
 
@@ -932,36 +951,39 @@ function populateTable(statusCode, displayList, parameters){
 		for(var index = 0; index < itemList.length; index++){
 			// get next item
 			var currentItem = itemList[index];
-			//checks if description exists and creates row in case it exists
-			var description = currentItem['Description'] ? '<img src="/img/info.png" tooltip="'+ currentItem['Description'].replace(/"/g, '&quot;') + '" id="descriptionIcon" class="dontWrap">' : ''; 
+			//create a description icon if a description exists
+			var itemDescription = currentItem['Description'] ? '<img src="/img/info.png" id="descriptionIcon" tooltip="'+ currentItem['Description'].replace(/"/g, '&quot;') + '">' : '<img src="/img/empty.png" id="noDescriptionIcon">'; 
+			// create a warning icon if there are warnings about this item
+			var itemWarning = '&nbsp;&nbsp;';
+			// if there are any issues about this item
 			if(currentItem['Issues']){
-				// if there is no info icon
-				if(!description){
-					// add some extra space to vertically align the warning icons (more or less)
-					description = '&nbsp;&nbsp;&nbsp;&nbsp;';
-				}
-				description += '&nbsp;&nbsp;<img src="/img/warning.png" tooltip="';
+				// create a warning icon
+				itemWarning += '<img src="/img/warning.png" id="warningIcon" tooltip="';
 				
 				var issues = currentItem['Issues'];
-				var issueInfo = '';
+				// issues that might apply to channels
 				if(currentItem['Type'] == 'channel'){
 					// add missing code template library references errors					
 					if(issues['missingReferences']){
-						description += 'The following code template library <b>reference'+ ((issues['missingReferences'].length == 1) ? ' is missing' : 's are missing') + '</b>:\n<ul><li>'+ issues['missingReferences'].sort().join('</li><li>').replace(/"/g, '&quot;') + '</ul>\n';
+						itemWarning += 'The following code template library <b>reference'+ ((issues['missingReferences'].length == 1) ? ' is missing' : 's are missing') + '</b>:\n<ul><li>'+ issues['missingReferences'].sort().join('</li><li>').replace(/"/g, '&quot;') + '</ul>\n';
 					}
 					// add missing function definition errors
 					if(issues['unknownFunctions']){
-						description += 'For the following reference' + ((issues['unknownFunctions'].length > 1) ? 's' : '') + ' <b>no function definition</b> was found:\n<ul><li>'+ issues['unknownFunctions'].sort().join('</li><li>').replace(/"/g, '&quot;') + '</ul>\n';
+						itemWarning += 'For the following reference' + ((issues['unknownFunctions'].length > 1) ? 's' : '') + ' <b>no function definition</b> was found:\n<ul><li>'+ issues['unknownFunctions'].sort().join('</li>\n<li>').replace(/"/g, '&quot;') + '</li></ul>\n';
 					}
+				// issues that might apply to code templates
 				}else{
 					// add functions that have multiple definitions errors
 					if(issues['multipleDefinitions']){
-						description += 'The function has been <b>defined multiple times</b> in the following code template' + ((issues['multipleDefinitions'].length > 1) ? 's' : '') + ':\n<ul><li>'+ issues['multipleDefinitions'].sort().join('</li><li>').replace(/"/g, '&quot;') + '</ul>\n';
+						itemWarning += 'The function has been <b>defined multiple times</b> in the following code template' + ((issues['multipleDefinitions'].length > 1) ? 's' : '') + ':\n<ul><li>'+ issues['multipleDefinitions'].sort().join('</li><li>').replace(/"/g, '&quot;') + '</li></ul>\n';
 					}
 				}
-				// finalize the description item
-				description += issueInfo + '" id="warningIcon"  class="dontWrap">';
+				// finalize the warning item
+				itemWarning += '">';
+			} else{
+				itemWarning += '<img src="/img/empty.png" id="noWarningIcon" width="11">';
 			}
+			
 			// format the current line depending the item type (group or member)
 			if(currentItem['Group']){
 				// create a line for a group element
@@ -972,7 +994,7 @@ function populateTable(statusCode, displayList, parameters){
 							'" name="' + currentItem['Display name'] + 
 							'"><td>' + currentItem['Display name'] + 
 							' (' + currentItem["Number of members"] +
-							')</td><td style="text-align: left;">' + description + 
+							')</td><td class="noBreak">' + itemDescription + itemWarning + '&nbsp;&nbsp;<img src="/img/empty.png" id="noStatusIcon">' + // so far no status icon for grouping elements
 							'</td><td>' + currentItem['Display date']  + 
 							'</td><td class="right">' + currentItem['Version'] + 
 							'</td></tr>';
@@ -984,7 +1006,7 @@ function populateTable(statusCode, displayList, parameters){
 							'" name="' + (currentItem['Function name'] || currentItem['Display name']) + 
 							'" style="color:' + ((currentItem['Is disabled']) ? 'LightSlateGray' : 'black') + 
 							';"><td>' + (currentItem['Function name'] || currentItem['Display name']) + 
-							'</td><td style="text-align: left;">' + description + 
+							'</td><td class="noBreak">' + itemDescription + itemWarning + '&nbsp;&nbsp;<img src="/img/empty.png" id="statusIcon">' + 
 							'</td><td>' + currentItem['Display date']  + 
 							'</td> <td class="right">' + currentItem['Version'] + 
 							'</td></tr>';
@@ -1012,7 +1034,9 @@ function populateTable(statusCode, displayList, parameters){
 				
 		// activate custom tooltips for the info icons
 		activateToolTips();
-			
+//xxxxxxxxx		
+		// activate status updates if channels are selected
+		activateChannelStatusUpdates();
 
 		//If a line in this table is clicked, details about the component should be displayed
 		$("#" + parameters.systemType + "Items tr").click(function(event) {
@@ -1092,8 +1116,9 @@ function populateTable(statusCode, displayList, parameters){
 			{
 				//key LEFT pressed
 				case 37:
-					if($("#sourceComponents tr.correspondance").length > 0){
-						$("#sourceComponents tr.correspondance").click().focus();
+					var correspondingItem = $("#sourceComponents tr.correspondance, #sourceComponents tr.hoverCorrespondance");
+					if(correspondingItem.length > 0){
+						correspondingItem.click().focus();
 					}
 					break;
 				//key UP pressed
@@ -1113,8 +1138,9 @@ function populateTable(statusCode, displayList, parameters){
 					break;
 				//key RIGHT pressed
 				case 39:
-					if($("#destComponents tr.correspondance").length > 0){
-						$("#destComponents tr.correspondance").click().focus();
+					var correspondingItem = $("#destComponents tr.correspondance, #destComponents tr.hoverCorrespondance");
+					if(correspondingItem.length > 0){
+						correspondingItem.click().focus();
 					}
 					break;
 				//key DOWN pressed
@@ -1184,7 +1210,7 @@ function cacheHighlightClasses(tableBody){
 }
 
 /**
- * Displays or hides the option for avoiding to migrate refrenced code templates, depending on component type and selected table
+ * Displays or hides the option for avoiding to migrate referenced code templates, depending on component type and selected table
  * @param {*} isLeftTable - Indicates if the function was called from the left or right table
  * @param {*} isLeftTable - Indicates if the function was called from the left or right table
  */
@@ -1355,7 +1381,7 @@ function removeHighlighting(tableRow){
 		tableRow = $(tableRow);
 	}
 	
-	if(tableRow.attr("class").includes("hoverHighlight") || tableRow.attr("class").includes("hover")){
+	if(tableRow.attr("class").includes("hoverHighlight") || tableRow.attr("class").includes("hover") || tableRow.attr("class").includes("hoverCorrespondance")){
 		// the row was hovered, make sure the hovering appearance remains (albeit w/o highlighting)
 		tableRow.attr("class", tableRow.data("hoverClasses"));	
 	} else{
@@ -1411,15 +1437,16 @@ function highlight(row, systemType, multiSelectKeysPressed) {
         removeHighlighting(row);
 		selectedId = "";
     } else{
-		if(row.attr("class").includes("hoverHighlight") || row.attr("class").includes("hover")){
-			// the row was hovered, make sure the hovering appearance remains (albeit w/o highlighting)
+		if(row.attr("class").includes("hover")){
+			// row is hovered
 			row.attr("class", row.data("hoverHighlightClasses"));
-		} else{
-			// the current row was not hovered set it back to standard appearance
+		} else {
+			// ro is non-hovered
 			row.attr("class", row.data("highlightClasses"));
 		}
         selectedId = "#" + row.attr('id');
-		row.focus();
+		row.focus({preventScroll: true});
+		// console.log('Active: '+$(document.activeElement).attr('name'));
     }
 }
 
@@ -1492,7 +1519,7 @@ function metaDataChecker(selectedRow, systemType){
 		// do not show the compare button
 		$('#compareButton').css('visibility', 'hidden');
 		
-		$(correspondingRow).focus();
+//		$(correspondingRow).focus();
 		// no need to search for a corrsponding item
 		return;
 	}
@@ -2548,7 +2575,27 @@ function activateToolTips(){
 			$(tooltip).css('visibility', 'hidden');
 		}
 	);
+	
+	// activate copy to clipboard for the description and the warning buttons
+	$('[id=descriptionIcon], [id=warningIcon]').click(function(event) { 
+		// hold back event from underlying elements
+		event.stopPropagation();
+		// get the actual text content and free it from html tags
+		var text = '<div>' + $(this).attr('tooltip').replace(/\<br\>/g, '\r\n').replace(/\<li\>/g, '<li>- ') + '</div>';
+		text = $(text).text();
+		// and copy it to clipboard
+		var temp = $('<textarea>').appendTo('body').val(text).select();
+		document.execCommand('copy');
+		temp.remove();
+		// provide user feedback about the action by flashing the copied element
+		$(this).addClass("flashOnCopyContent");
 
+		var uncheck = $(this);
+		setTimeout(function() {
+			// after a delay of 200ms switch back to the original background color
+			uncheck.removeClass("flashOnCopyContent");
+		}, 300);
+	});
 }
 
 /**
@@ -2566,3 +2613,78 @@ function encrypt(text) {
     return encrypted;
 }
 
+var INTERVAL_ID;
+const refreshIntervalInSeconds = 5;
+
+function activateChannelStatusUpdates(){
+	if($('input[name = "compType"]:checked').val().startsWith('channel')){
+		requestChannelStatusUpdates()
+	}
+}
+
+function requestChannelStatusUpdates(){
+
+	// get the name of the left mirth instance
+	var systemLeft = $('#sourceSystem option:selected');
+	var systemRight = $('#destSystem option:selected');
+	// and also the one of the right instance
+	var payload = [];
+	var parameters = {};
+	if(systemLeft.attr('id') != 'none'){
+		payload.push({'name': systemLeft.val(), channel: null});
+		parameters.left = systemLeft.val();
+	}
+	if(systemRight.attr('id') != 'none'){
+		payload.push({'name': systemRight.val(), channel: null});
+		parameters.right = systemRight.val();
+	}
+	if(payload.length){
+		accessResource('/getChannelState', payload, setChannelStatus, parameters);
+	}
+	
+}
+
+/**
+	Set the status of all channels in the channel lists
+
+	@param {String} statusCode - The status code of the ajax call
+	@param {String} channelStatusList - The list of channel statuses
+	@param {String} instances - JSON object with the name of the left and right mirth instance
+*/
+function setChannelStatus(statusCode, channelStatusList, instances){
+
+	// update the status of all channels of the displayed Mirth instances
+	channelStatusList.forEach(instance => {
+		// get the name of the mirth instance
+		var instanceName = instance.name;
+		// get the state info of all channels of this instance
+		var channelStates = instance.status;
+		var channelList = null;
+
+		// determine if the current result set belongs to the left or right table
+		if(instances.left && (instances.left == instanceName)){
+			channelList = $('#sourceSystemItems tr');
+		} else if(instances.right && (instances.right == instanceName)){
+			channelList = $('#destSystemItems tr');
+		} else {
+			return;
+		}
+		// iterate over all table rows
+		channelList.each(function(){
+			let channelId = $(this).attr("itemId");
+			let statusIcon = $(this).find("td:eq(1) #statusIcon");
+			
+			// don't do it for grouping elements
+			if(statusIcon){
+				// determine the channel state. If the channel state is not in the list, the channel is undeployed
+				let imageName = channelStates[channelId] && channelStates[channelId].toLowerCase() || 'undeployed';
+				// for states that are currently changing, animated gifs are used
+				imageName += imageName.endsWith('ing') ? '.gif' : '.png';
+				// set the image
+				statusIcon.attr('src', '/img/' + imageName);
+			}
+		});
+		
+	});
+
+}
