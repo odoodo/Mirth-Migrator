@@ -952,3 +952,9 @@ input[type="color"]::-webkit-color-swatch {
 .hoverCorrespondanceGroup {
 	font-weight: bold;
 }
+
+.noBreak {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
