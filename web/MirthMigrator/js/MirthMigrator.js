@@ -132,10 +132,7 @@ function systemChanged(systemType){
 		if(!sourceBoxShown && !destBoxShown){
 			$('#flexBoxButtons').css('visibility', 'hidden');
 			// and also deactivate status update for channels
-			if(INTERVAL_ID){
-				clearInterval(INTERVAL_ID);
-				INTERVAL_ID =  null;
-			}
+			deactivateChannelStatusUpdates();
 		}
 		
 		// and also all component detail information. 
@@ -187,21 +184,12 @@ function populateComponentTables(refresh) {
 		}
 		var componentType = $('input[name = "compType"]:checked').val();
 		
+		// in case of channel groups
 		if(componentType == 'channelGroup'){
-// zzz
- 
-			// load the status of the channels
-			// activate the automatic status update for channels
-			if(!INTERVAL_ID){
-				INTERVAL_ID = setInterval(requestChannelStatusUpdates, refreshIntervalInSeconds * 1000);
-			}
-
+			activateChannelStatusUpdates();
 		} else{
 			// deactivate the automatic status update for code templates
-			if(INTERVAL_ID){
-				clearInterval(INTERVAL_ID);
-				INTERVAL_ID = null;
-			}
+			deactivateChannelStatusUpdates();
 		}
 		
 		var payload;
@@ -235,8 +223,9 @@ function populateComponentTables(refresh) {
  * @param {*} action The function that should be called w/ the response from the server
  * @param {*} parameters A json-object containing additional parameters that should be passed to the function defined under action
  * @param {*} refreshCache If set, the component metadata at server-side will be reloaded
+ * @param {*} silentMode If set, the mouse pointer will not be changed to busy mode while the query is executed
  */ 
-function accessResource(command, payload, action, parameters, refreshCache){
+function accessResource(command, payload, action, parameters, refreshCache, silentMode){
 	// make sure all needed parameters are available
     if((!command || !action)){
 		var message = (!command ? 'The webservice url':'The name of the function that should be called after execution') + ' is missing!';
@@ -253,15 +242,18 @@ function accessResource(command, payload, action, parameters, refreshCache){
 			"payload": payload || {},
 			"action": action,
 			"parameters": parameters || '',
-			"refreshCache": refreshCache || false});
+			"refreshCache": refreshCache || false,
+			"silentMode": silentMode || false});
 		
 		// and open the login dialog
 		openLogin();
 		return;
 	}
 	
-	// activate mouse busy pointer
-	indicateActivityStart();
+	// activate mouse busy pointer if it was not supressed via silent mode flag
+	if(!silentMode){
+		indicateActivityStart();
+	}
 	
 	// make the ajax call
 	$.ajax(
@@ -446,11 +438,13 @@ function setSystems(statusCode, response){
 }
 
 /**
- * Displays the Mirth Migrator version number
+ * Displays the Mirth Migrator version number and the refresh rate for channel state updates
  */ 
-function setVersion(statusCode, response) {
+function setGlobalParameters(statusCode, response) {
 	// set the version number
 	$("#versionNumber").html('v' + response.version);
+	// set the channel state refresh rate
+	refreshIntervalInSeconds = response.channelStateRefreshRate || refreshIntervalInSeconds;
 }
 
 /**
@@ -458,6 +452,8 @@ function setVersion(statusCode, response) {
  * @param {*} infoText - a message that will be displayed on the login dialog
  */ 
 function openLogin(infoText) {
+	// make sure the channel status updates are stopped
+	deactivateChannelStatusUpdates();
 	// set the info text
 	$("#loginInfo").html(infoText);
 	// display the login dialog
@@ -498,6 +494,9 @@ $(document).ready(function() {
 		
 		// reprocess all queued requests
 		requestList.forEach((request) => {
+			if(request.command == '/getChannelState'){
+				activateChannelStatusUpdates();
+			}
 			// retry sending the original request - this time w/ potentially valid login information
 			accessResource(request.command, request.payload, request.action, request.parameters, request.refreshCache);
 		});
@@ -569,7 +568,7 @@ $(document).ready(function() {
 	});
 	
 	// display the Mirth Migrator version
-	accessResource('/getVersion', null, setVersion);
+	accessResource('/getGlobalParameters', null, setGlobalParameters);
 	// make an initial call for populating some arreas as soon as the page was loaded
 	accessResource('/getEnvironments', null, setEnvironments);
 	// and now load the system select boxes
@@ -956,7 +955,7 @@ function populateTable(statusCode, displayList, parameters){
 			// get next item
 			var currentItem = itemList[index];
 			//create a description icon if a description exists
-			var itemDescription = currentItem['Description'] ? '<img src="/img/info.png" id="descriptionIcon" tooltip="'+ currentItem['Description'].replace(/"/g, '&quot;') + '">' : '<img src="/img/empty.png" id="noDescriptionIcon">'; 
+			var itemDescription = currentItem['Description'] ? '<img src="/img/info.png" id="descriptionIcon" tooltip="'+ currentItem['Description'].replace(/"/g, '&quot;') + '" width="12">' : '<img src="/img/empty.png" id="noDescriptionIcon" width="12">'; 
 			// create a warning icon if there are warnings about this item
 			var itemWarning = '&nbsp;&nbsp;';
 			// if there are any issues about this item
@@ -983,7 +982,7 @@ function populateTable(statusCode, displayList, parameters){
 					}
 				}
 				// finalize the warning item
-				itemWarning += '">';
+				itemWarning += '" width="11">';
 			} else{
 				itemWarning += '<img src="/img/empty.png" id="noWarningIcon" width="11">';
 			}
@@ -998,7 +997,7 @@ function populateTable(statusCode, displayList, parameters){
 							'" name="' + currentItem['Display name'] + 
 							'"><td>' + currentItem['Display name'] + 
 							' (' + currentItem["Number of members"] +
-							')</td><td class="noBreak">' + itemDescription + itemWarning + '&nbsp;&nbsp;<img src="/img/empty.png" id="noStatusIcon">' + // so far no status icon for grouping elements
+							')</td><td class="noBreak">' + itemDescription + itemWarning + '&nbsp;&nbsp;<img src="/img/empty.png" id="noStatusIcon" width="12">' + // so far no status icon for grouping elements
 							'</td><td>' + currentItem['Display date']  + 
 							'</td><td class="right">' + currentItem['Version'] + 
 							'</td></tr>';
@@ -1009,8 +1008,8 @@ function populateTable(statusCode, displayList, parameters){
 							'" itemId="' + currentItem['Id'] + 
 							'" name="' + (currentItem['Function name'] || currentItem['Display name']) + 
 							'" style="color:' + ((currentItem['Is disabled']) ? 'LightSlateGray' : 'black') + 
-							';"><td>' + (currentItem['Function name'] || currentItem['Display name']) + 
-							'</td><td class="noBreak">' + itemDescription + itemWarning + '&nbsp;&nbsp;<img src="/img/empty.png" id="statusIcon">' + 
+							';"><td' + (currentItem['Is disabled'] ? ' title="Channel is disabled"' : '') + '>' + (currentItem['Function name'] || currentItem['Display name']) + 
+							'</td><td class="noBreak">' + itemDescription + itemWarning + '&nbsp;&nbsp;<img src="/img/empty.png" id="statusIcon" width="12">' + 
 							'</td><td>' + currentItem['Display date']  + 
 							'</td> <td class="right">' + currentItem['Version'] + 
 							'</td></tr>';
@@ -2618,15 +2617,45 @@ function encrypt(text) {
 }
 
 var INTERVAL_ID;
-const refreshIntervalInSeconds = 5;
+// The frequency in seconds that is used for updating the channel state
+var refreshIntervalInSeconds = 5;
 
+/**
+	If channels are displayed and the automatic channel status update is not active, it will be activated
+*/
 function activateChannelStatusUpdates(){
-	if($('input[name = "compType"]:checked').val().startsWith('channel')){
-		requestChannelStatusUpdates()
+	// deactivate any already existing update
+	deactivateChannelStatusUpdates();
+	var componentType = $('input[name = "compType"]:checked');
+	// if channels are displayed
+	if(componentType.val() && componentType.val().startsWith('channel')){
+		// update channel state
+		requestChannelStatusUpdates(false);
+		// and activate the automatic update
+		INTERVAL_ID = setInterval(requestChannelStatusUpdates, refreshIntervalInSeconds * 1000);
 	}
 }
 
-function requestChannelStatusUpdates(){
+/**
+	If the automatic channel status update is active, it will be deactivated
+*/
+function deactivateChannelStatusUpdates(){
+	if(INTERVAL_ID){
+		clearInterval(INTERVAL_ID);
+		INTERVAL_ID =  null;
+	}
+}
+
+/**
+	Updates the channel status of all channels of all shown mirth instances
+
+	@param {boolean} silentMode - This flag can be used to determine if a busy indicator will be shown while the status is updated (default: true)
+*/
+function requestChannelStatusUpdates(silentMode){
+	
+	if(!silentMode){
+		silentMode = true;
+	}
 
 	// get the name of the left mirth instance
 	var systemLeft = $('#sourceSystem option:selected');
@@ -2643,7 +2672,7 @@ function requestChannelStatusUpdates(){
 		parameters.right = systemRight.val();
 	}
 	if(payload.length){
-		accessResource('/getChannelState', payload, setChannelStatus, parameters);
+		accessResource('/getChannelState', payload, setChannelStatus, parameters, false, silentMode);
 	}
 	
 }
@@ -2682,13 +2711,15 @@ function setChannelStatus(statusCode, channelStatusList, instances){
 			if(statusIcon){
 				// determine the channel state. If the channel state is not in the list, the channel is undeployed
 				let imageName = channelStates[channelId] && channelStates[channelId].toLowerCase() || 'undeployed';
-				// for states that are currently changing, animated gifs are used
-				imageName += imageName.endsWith('ing') ? '.gif' : '.png';
-				// set the image
-				statusIcon.attr('src', '/img/' + imageName);
+				var imageSource = '/img/' + imageName + '.png';
+				// no need to reset unchanged values - this would only interupt animations
+				if(statusIcon.attr('src') != imageSource){
+					// set the image
+					statusIcon.attr('src', imageSource);
+					// and inform the user also via hint about the channel state
+					statusIcon.attr('title', 'Channel is ' + imageName);
+				}
 			}
-		});
-		
+		});	
 	});
-
 }

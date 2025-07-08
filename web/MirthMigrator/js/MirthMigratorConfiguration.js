@@ -3,7 +3,7 @@
 	// do so
 	$('body').append(	'<div class="openSettingsIcon" onclick="loadSettings();"></div>\n' +
 						'<div id="configurationSection">\n' +
-						'	<div class="closeSettingsIcon" onclick="saveSettings();"></div>\n' +
+						'	<div class="closeSettingsIcon" onclick="saveSettings();" title="Close the settings sections.\nAll changes will be saved automatically."></div>\n' +
 						'	<h1>&nbsp;&nbsp;Mirth Migrator Configuration</h1>\n' +
 						'	<div class="tab">\n' +
 						'		<button class="tablinks" id="environmentConfigurationTab" onclick="showConfigTab(\'environmentConfiguration\')" active>Environments</button>\n' +
@@ -135,11 +135,11 @@ function setEnvironmentConfiguration(environmentConfiguration){
 	var environmentConfigurationSection = '<h2><i><u>Mirth Environments</u></i></h2><table id="environmentTable"><tr><th>Name</th><th>Color</th><th></th></tr>';
 	// add all environments in the right order
 	for (let [orderIndex, environment] of environments) {
-		environmentConfigurationSection += '<tr><td><input type="text" id="' + environment.id + '" value="' + environment.name + '"></td><td><input type="color" id="' + environment.id + '" name="environmentColor" value="' + environment.color + '"></td><td class="deleteRow"><img src="/img/removeRow.png" alt="remove row" id="removeConfigRow"></img></td></tr>';
+		environmentConfigurationSection += '<tr><td><input type="text" id="' + environment.id + '" value="' + environment.name + '" title="The name of the environment"></td><td><input type="color" id="' + environment.id + '" name="environmentColor" value="' + environment.color + '" title="The color in which this environment and all mirth instances assigned to this environment will be displayed"></td><td class="deleteRow"><img src="/img/removeRow.png" alt="remove row" id="removeConfigRow" title="Remove this environment from the list"></img></td></tr>';
 	}
 	environmentConfigurationSection += '</table><br/>';
 	// add a button for entering a new environment
-	environmentConfigurationSection += '<button type="button" onclick="addEnvironment()">Add</button>';
+	environmentConfigurationSection += '<button type="button" onclick="addEnvironment()" title="Adds a new environment.\nThe order of environment definitions also determines the order in which the environments are displayed in the application.">Add</button>';
 	
 	// and display the table
 	$("#environmentConfiguration").html(environmentConfigurationSection);
@@ -252,8 +252,12 @@ function getFunctionFilterConfiguration(){
  * @return {Object} A json object containing the content of the misc section
  */
 function getMiscConfiguration(){
+	// use the current value of the channel status refresh rate
+	refreshIntervalInSeconds = $('#channelStatusUpdateInterval').val().trim();
+	activateChannelStatusUpdates();
+	
 	// just read the only parameter for the time being
-	return {"sessionLifeSpanInMinutes": $('#sessionLifespann').val().trim()};
+	return {"sessionLifeSpanInMinutes": ($('#sessionLifespann').val().trim() != 'deactivated') ? $('#sessionLifespann').val().trim() : 0, "channelStatusUpdateIntervalInSeconds": refreshIntervalInSeconds};
 }
 
 /**
@@ -264,11 +268,15 @@ function generateConfiguration(){
 	var configuration ={};
 	
 	configuration.environment = getEnvironmentConfiguration();
-	configuration.sessionLifeSpanInMinutes = +getMiscConfiguration().sessionLifeSpanInMinutes;
+	// set it once w/o encrypted passwords for calculating the checksum
 	configuration.system = getSystemConfiguration();
+	configuration.miscellaneous = getMiscConfiguration();
 	configuration.excludeFromFunctionDetection = getFunctionFilterConfiguration();
+	// calculate the checksum of the plain config
 	configuration.checksum = calculateChecksum(configuration);
+	// now the passwords can be encrypted w/o altering the checksum
 	configuration.system = getSystemConfiguration(true);
+	
 	return configuration;
 }
 
@@ -299,7 +307,7 @@ function createEnvironmentSelect(environments){
 
 /**
  * Creates the content of the Mirth Intances panel 
- * @param {Object[]} systemConfiguration An array containing all Mrith instances
+ * @param {Object[]} systemConfiguration An array containing all Mirth instances
  * @param {Object[]} environments An array containing all environments
  */
 function setSystemConfiguration(systemConfiguration, environments){
@@ -312,18 +320,18 @@ function setSystemConfiguration(systemConfiguration, environments){
 	// add all Mirth instances to the table
 	systemConfiguration.forEach((system) => {
 		
-	mirthInstanceConfigurationSection  +=	'<tr><td><input type="text" id="name" value="' + system.name + '"></td>' +
-											'<td><input type="text" id="description" value="' + system.description + '"></td>' +
-											'<td><input type="text" id="server" value="' + system.server + '"></td>' +
-											'<td style="width: 50px;"><input type="number" id="port" value="' + system.port + '" style="width: 42px"></td>' +
-											'<td><input type="text" id="user" value="' + system.user + '"></td>' +
-											'<td><input type="password" id="password" value="' + system.password + '">&nbsp;<img src="/img/showPassword.png" alt="show password" id="showPassword" onmouseenter="showPassword(event)" onmouseleave="hidePassword(event)" onclick="copyToClipboard(event)"></img></td>' +
-											'<td>' + environmentSelect.replace('value="'+system.environment + '"', 'value="'+system.environment + '" selected') + '</td>' +
-											'<td class="deleteRow"><img src="/img/removeRow.png" alt="remove row" id="removeConfigRow"></img></td></tr>';
+	mirthInstanceConfigurationSection  +=	'<tr><td><input type="text" id="name" value="' + system.name + '" title="The display name of the mirth instance"></td>' +
+											'<td><input type="text" id="description" value="' + system.description + '" title="An optional description about what this mirth instance is for"></td>' +
+											'<td><input type="text" id="server" value="' + system.server + '" title="the server name or IP of the mirth instance"></td>' +
+											'<td style="width: 50px;"><input type="number" id="port" value="' + system.port + '" title="The port of the mirth instance" style="width: 42px"></td>' +
+											'<td><input type="text" id="user" value="' + system.user + '" title="The user name of a mirth user account at this mirth instance.\nThis account needs full access."></td>' +
+											'<td><input type="password" id="password" value="' + system.password + '" title="The passord of a mirth user account at this mirth instance.">&nbsp;<img src="/img/showPassword.png" alt="show password" id="showPassword" onmouseenter="showPassword(event)" onmouseleave="hidePassword(event)" onclick="copyToClipboard(event)" title="Click left to copy the password to the clipboard"></img></td>' +
+											'<td title="The environment to which this mirth instance belongs">' + environmentSelect.replace('value="'+system.environment + '"', 'value="'+system.environment + '" selected') + '</td>' +
+											'<td class="deleteRow"><img src="/img/removeRow.png" alt="remove row" id="removeConfigRow" title="Remove the mirth instance definition"></img></td></tr>';
 	});
 	mirthInstanceConfigurationSection += '</table><br/>';
 	// add a button for entering a new Mirth instance
-	mirthInstanceConfigurationSection += '<button type="button" onclick="addMirthInstance()">Add</button>';
+	mirthInstanceConfigurationSection += '<button type="button" onclick="addMirthInstance()" title="Adds another mirth instance.">Add</button>';
 	
 	// and display the table
 	$("#systemConfiguration").html(mirthInstanceConfigurationSection);
@@ -362,20 +370,41 @@ function copyToClipboard(event){
 	}, 300);
 }
 
-function setMiscConfiguration(sessionLifeSpanInMinutes){
+/**
+ * Creates the miscellaneous section of the configuration panel 
+ * @param {Object[]} miscellaneous A JSON object containing all parameters of the misc section
+ */
+function setMiscConfiguration(miscellaneous){
 	// create the section content
-	var miscConfiguration = '<h2><i><u>Misc Configuration Parameters</u></i></h2>Maximum inactivity period: <input type="number" id="sessionLifespann" min="0" value="' + sessionLifeSpanInMinutes + '"> minutes';
+	var miscConfiguration = '<h2><i><u>Misc Configuration Parameters</u></i></h2>' + 
+							'<table id="miscParameters">' + 
+							'<tr><td>Maximum inactivity period:</td><td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><input type="number" id="sessionLifespann" min="0" value="' + (miscellaneous.sessionLifeSpanInMinutes || 0) + '" style="width: 40px" title="The number of minutes of inactivity after which a user session will expire and the user needs to reauthenticate to go on.\nThe session will never expire if this value is set to 0."> minutes&nbsp;<span id="unlimitedLifespan" style="color: red" title="The session inactivity timeout is currently deactivated.\nIncrease the value for reactivating it."><b><i>(deactivated)</i></b></span></td></tr>' + 
+							'<tr><td>Channel status refresh frequency:</td><td><input type="number" id="channelStatusUpdateInterval" min="1" value="' + (miscellaneous.channelStatusUpdateIntervalInSeconds || 5) + '" style="width: 40px" title="The number of seconds after which the state of channels will be refreshed"> seconds</td></tr>' + 
+							'</table>';
 	// and display it
 	$("#miscConfiguration").html(miscConfiguration);
+	$('#unlimitedLifespan').css('display', (miscellaneous.sessionLifeSpanInMinutes === "0") ? 'inline-block' : 'none');
 	$("#miscConfiguration").css("display", "none");
 
+	$('#sessionLifespann').on('input', function() {
+		if($(this).val() <= 0){
+			$(this).val(0);
+		}
+		$('#unlimitedLifespan').css('display', ($(this).val() === "0") ? 'inline-block' : 'none');
+	});
+	
+	$('#channelStatusUpdateInterval').on('input', function() {
+		if($(this).val() < 1){
+			$(this).val(1);
+		}
+	});
 }
 
 function setFunctionFilterConfiguration(functionFilters){
 
 	// create the section content
 	var functionFilterConfiguration = 	'<h2><i><u>Function Filters</u></i></h2><table id="functionFilterContainer">\n' + 
-										'<tr><th><input type="text" id="filter" onkeydown="handleKeyDownEvent(event)" oninput="filterFunctionFilters(this.value)">&nbsp;<button id="addFilterButton" type="button" onclick="addFilter()">Add</button></th></tr>\n' + 
+										'<tr><th><input type="text" id="filter" onkeydown="handleKeyDownEvent(event)" oninput="filterFunctionFilters(this.value)" title="Enter a search string for a function filter or the name of a new function to filter.">&nbsp;<button id="addFilterButton" type="button" onclick="addFilter()" title="Add this function name to the list.\nIf the function detection algorithm detects a function reference with this name, it will ignore it.\n\nBe aware that your input is case sensitive when used by the function filter algorithm.\n\nThis button is only available if the entered function name is not already in the list.">Add</button></th></tr>\n' + 
 										'<tr><td><hr></td></tr>' +
 										'<tr><td id="functionFilterWrapper"><table id="functionFiltersTable">\n';
 	// order filter names descending								
@@ -487,7 +516,7 @@ function openSettings(requestStatus, configuration, parameters){
 	setFunctionFilterConfiguration(configuration.excludeFromFunctionDetection);
 	
 	/** Misc section **/
-	setMiscConfiguration(configuration.sessionLifeSpanInMinutes);
+	setMiscConfiguration(configuration.miscellaneous);
 
 	// if a specific tab should be initially shown
 	if(parameters){
