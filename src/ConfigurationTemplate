@@ -19,7 +19,6 @@
 			"position": 3
 		}
 	],
-	"sessionLifeSpanInMinutes": 20,
 	"system": [
 		{
 			"server": "",
@@ -82,5 +81,9 @@
 		"switch",
 		"throw",
 		"while"
-	]
+	],
+	"miscellaneous": {
+		"sessionLifeSpanInMinutes": 20,
+		"channelStatusUpdateIntervalInSeconds": 5
+	}
 }
