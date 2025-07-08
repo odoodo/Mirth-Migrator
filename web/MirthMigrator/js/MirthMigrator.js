@@ -287,6 +287,14 @@ function accessResource(command, payload, action, parameters, refreshCache, sile
 			try{
 				// get the status code
 				statusCode = xhr.status;
+				// deactivate automatic channel status update
+				deactivateChannelStatusUpdates()	
+				// if the error dialog is currently still active
+				if($("#errorPopup").css('display') == 'flex'){
+					// do not overwrite it
+					return;
+				}
+				
 				try{
 				// and also the response object				
 				response = JSON.parse(xhr.responseText);
@@ -336,14 +344,15 @@ function accessResource(command, payload, action, parameters, refreshCache, sile
 						loadSettings('systemConfiguration', true);
 					}
 					return;
+				} else{
+					// requested mirth service is not available
+					$("#errorImage").attr("src", ((statusCode == 503) ? '/img/serverUnavailable.png' : '/img/error.png'));
+					// set the error message text
+					$("#errorInfo").html(response + '<br>(' + statusCode + ' ' + status + ')');
+					// and display the error dialog
+					$("#dialog").css('display','block');
+					$("#errorPopup").css('display','flex');
 				}
-				
-				$("#errorImage").attr("src", ((statusCode == 503) ? '/img/serverUnavailable.png' : '/img/error.png'));
-				// set the error message text
-				$("#errorInfo").html(response + ' (' + statusCode + ' ' + status + ')');
-				// and display the eror dialog
-				$("#dialog").css('display','block');
-				$("#errorPopup").css('display','flex');
 			} finally{
 				// indicate to the user that the activity has ended (if there are no other ongoing task)
 				indicateActivityEnd();
