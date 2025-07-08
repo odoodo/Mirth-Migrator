@@ -11,7 +11,7 @@ Version:&#xd;
 20241030: added auto-detection of API port used by the host Mirth instance&#xd;
 20240822: added support for configuration frontend&#xd;
 20240521: initial version</description>
-  <revision>521</revision>
+  <revision>534</revision>
   <sourceConnector version="3.7.1">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -133,10 +133,12 @@ Version:&#xd;
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
           <script>var ignoreConfigurationException = false;
+var resetSessionTimeout = true;
 
 switch (sourceMap.get(&apos;contextPath&apos;) + &apos;&apos;) {
 	case &apos;/getChannelState&apos;:
 		destination = 14;
+		resetSessionTimeout = false;
 		break;	
 	case &apos;/getComponentMetaData&apos;:
 		destination = 1;
@@ -176,7 +178,7 @@ switch (sourceMap.get(&apos;contextPath&apos;) + &apos;&apos;) {
 	case &apos;/getReferencedCodeTemplates&apos;:
 		destination = 12;
 		break;
-	case &apos;/getVersion&apos;:
+	case &apos;/getGlobalParameters&apos;:
 		destination = 13;
 		ignoreConfigurationException = true;
 		break;
@@ -187,6 +189,7 @@ switch (sourceMap.get(&apos;contextPath&apos;) + &apos;&apos;) {
 
 destinationSet.removeAllExcept(destination);
 channelMap.put(&apos;ignoreConfigurationException&apos;, ignoreConfigurationException);
+channelMap.put(&apos;resetSessionTimeout&apos;, resetSessionTimeout);
 
 return true;</script>
         </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
@@ -198,6 +201,7 @@ return true;</script>
           <script>response = {};
 const client = Packages.lu.hrs.mirth.migration.MirthMigrator;
 var ignoreConfigurationException = channelMap.get(&apos;ignoreConfigurationException&apos;) == true;
+var resetSessionTimeout = channelMap.get(&apos;resetSessionTimeout&apos;) == true;
 
 // access headers
 var headers = sourceMap.get(&apos;headers&apos;);
@@ -208,6 +212,7 @@ var responseStatusCode = 200;
 
 if(headers.contains(&apos;sessionId&apos;) &amp;&amp; headers.getHeader(&apos;sessionId&apos;).trim()){
 	var sessionId = headers.getHeader(&apos;sessionId&apos;);
+	logger.info(&apos;Request &quot;&apos; + sourceMap.get(&apos;contextPath&apos;).substr(1) + &apos;&quot; came with session-id: &apos; + sessionId + &apos; ==&gt; &apos; + (client.isValidUserSession(sessionId, false) ? &apos;valid&apos; : &apos;expired!&apos;));
 	var configurationChanged = false;
 	
 	try {
@@ -231,11 +236,11 @@ if(headers.contains(&apos;sessionId&apos;) &amp;&amp; headers.getHeader(&apos;se
 	if(configurationChanged){
 		responseStatusCode = 409;
 		response.message = &apos;Configuration changed&apos;;
-		
-	} else if(sessionId.indexOf(&apos;JSESSIONID&apos;) == 0){
+
 	// if an active session id was provided
-		// check if it is still valid
-		if(client.isValidUserSession(sessionId)){
+	} else if(sessionId.indexOf(&apos;JSESSIONID&apos;) == 0){
+		// check if it is still valid (this check will also reset the timeout for a valid user session if not explicitely stated otherwise)
+		if(client.isValidUserSession(sessionId, resetSessionTimeout)){
 			// it is valid, place the session id in the channel map
 			channelMap.put(&apos;sessionId&apos;, headers.getHeader(&apos;sessionId&apos;));
 		} else{
@@ -1474,7 +1479,7 @@ responseMap.put(&apos;response&apos;, JSON.stringify(referencedCodeTemplate.payl
     </connector>
     <connector version="3.7.1">
       <metaDataId>13</metaDataId>
-      <name>getVersion</name>
+      <name>getGlobalParameters</name>
       <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="3.7.1">
         <pluginProperties/>
         <destinationConnectorProperties version="3.7.1">
@@ -1502,7 +1507,13 @@ responseMap.put(&apos;response&apos;, JSON.stringify(referencedCodeTemplate.payl
           <reattachAttachments>true</reattachAttachments>
         </destinationConnectorProperties>
         <script>/**
-Provides the version of the Mirth Migrator
+
+Provides the global parameters of the Mirth Migrator.
+
+These are currently:
+- The Mirth Migrator version
+- The refresh rate of the channel state in seconds
+
 */</script>
       </properties>
       <transformer version="3.7.1">
@@ -1513,14 +1524,14 @@ Provides the version of the Mirth Migrator
             <enabled>true</enabled>
             <script>const MirthMigrator = Packages.lu.hrs.mirth.migration.MirthMigrator;
 
-//get the Mirth Migrator version
-var version = MirthMigrator.getVersion();
+//get the global Mirth Migrator from the configuration
+var globalParameters = MirthMigrator.getGlobalParameters();
 
 // set the status code
 channelMap.put(&apos;responseStatusCode&apos;, &apos;200&apos;);
 
-// and send the Mirth Migrator version to the client
-responseMap.put(&apos;response&apos;, JSON.stringify({&apos;version&apos;: version}));</script>
+// and send the Mirth Migrator global parameters to the client
+responseMap.put(&apos;response&apos;, JSON.stringify(globalParameters.payload));</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         </elements>
         <inboundTemplate encoding="base64"></inboundTemplate>
@@ -1792,7 +1803,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1749645623445</time>
+        <time>1751963620767</time>
         <timezone>Europe/Berlin</timezone>
       </lastModified>
       <pruningSettings>
