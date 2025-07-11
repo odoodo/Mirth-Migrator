@@ -23,7 +23,9 @@ Identifies which channels and functions rely on specific functions, as well as w
   </ul>
   
 <h2>Screenshots</h2>
-  <kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/01fb4697-c3b1-4927-83b5-3880f2cad292" width="160"></kbd>
+  <kbd><img src="https://github.com/user-attachments/assets/311ad483-482e-4bb7-8264-cdfaa2304076" width="160"></kbd>
+  <kbd><img src="https://github.com/user-attachments/assets/54c539d2-c2ac-43dc-9068-6b2f1eccb600" width="160"></kbd>
+  <kbd><img src="https://github.com/user-attachments/assets/29218c04-bc2a-4c86-86ae-58763fd8b971" width="160"></kbd>
   <kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/582d4991-04b5-4132-805d-48aee2267c80" width="160"></kbd>
   <kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/0858502d-2135-4674-bdac-e784ab8fc1af" width="160"></kbd>
   <kbd><img src="https://github.com/odoodo/Mirth-Migrator/assets/61003874/d6752f34-d959-46cf-bbc8-e744b9284a47" width="160"></kbd>
