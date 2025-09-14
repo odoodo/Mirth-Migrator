@@ -1,7 +1,7 @@
 <p align="center"><img src="https://github.com/user-attachments/assets/7d9cabf1-b4d2-4e32-8b40-3a579f398b72"></p>
 <b>Mirth Migrator</b> is a web-based tool that automates the transfer of <a href="https://www.nextgen.com/solutions/interoperability/mirth-integration-engine/mirth-connect-downloads" target="_blank">Mirth Connect Enterprise Service Bus</a> channels and code templates between Mirth environments. It has a strong focus on JavaScript functions stored in code templates, ensuring seamless migration and proper function integration with the channels that depend on them. <br/>
 <br/>
-This tool works with the Open Source as well as the commercial version of Mirth Connect.
+This tool works with the Open Source as well as the commercial version of Mirth Connect as also the <a href='https://openintegrationengine.org/' target='_blank'>Open Integration Engine</a> and <a href='https://openintegrationengine.org/' target='_blank'>BridgeLink</a> forks of Mirth Connect.
 
 <h2>Key Features</h2>
 <ul>
