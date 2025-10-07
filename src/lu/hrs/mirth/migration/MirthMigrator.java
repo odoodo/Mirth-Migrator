@@ -6,8 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
@@ -30,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -98,6 +97,11 @@ public class MirthMigrator {
 	public final static String CHANNEL_PRUNING = "channelPruning";
 	/** The identifier or the component type code template library */
 	public final static String CODE_TEMPLATE_LIBRARY = "codeTemplateLibrary";
+	
+	/** Defines the states that are allowed for channel deploy */
+	private final static Set<String> channelDeployState = new HashSet<>(Arrays.asList("DEPLOYED", "STARTED", "PAUSED", "STOPPED"));
+	/** Defines the states that are allowed for channel undeploy */
+	private final static Set<String> channelUndeployState = new HashSet<>(Arrays.asList("ENDABLED", "DISABLED"));
 	/**
 	 * The component type could not be determined (usually because the component definition did not contain any indicator that would allow to
 	 * determine the type)
@@ -3058,6 +3062,9 @@ public class MirthMigrator {
 				// add the id of the channel
 				String channelId = channel.getString("id");
 				metaData.accumulate("Id", channelId);
+				// add the initial channel state after deployment
+				String initialState = channel.getJSONObject("properties").getString("initialState");
+				metaData.accumulate("Initial state", initialState);
 				// add the channel to the name to id mapping
 				getChannelIdByName().put(channelName, channelId);
 				// add the channel to the id to name mapping
@@ -3923,6 +3930,11 @@ public class MirthMigrator {
 		if (channel.has("Description")) {
 			// the description of the library
 			result.accumulate("Description", channel.getString("Description"));
+		}
+		
+		if (channel.has("Initial state")) {
+			// the description of the library
+			result.accumulate("Initial state", channel.getString("Initial state"));
 		}
 
 		// the documentation of changes that have been applied to the channel
@@ -5326,32 +5338,453 @@ public class MirthMigrator {
 		return createReturnValue(200, stateList);
 	}
 
+
 	/**
 	 * Sets the state of channels
-	 * 
-	 * @param channelId
-	 *            An array of IDs of channels for which the current state should be set.
-	 * @return a JSON array with the following structure:
-	 *         <ul>
-	 *         <li><b>id</b> - The channel ID</li>
-	 *         <li><b>state</b> - The current state of the channel:
-	 *         <ul>
-	 *         <li><b>1</b> - stopped</li>
-	 *         <li><b>2</b> - started</li>
-	 *         <li><b>3</b> - paused</li>
-	 *         <li><b>4</b> - halted</li>
-	 *         <li><b>1a</b> - stopping</li>
-	 *         <li><b>2a</b> - starting</li>
-	 *         <li><b>3a</b> - pausing</li>
-	 *         <li><b>4a</b> - halting</li>
-	 *         </ul>
-	 *         </li>
-	 *         <li><b>reason</b> - A description of the error that occurred while trying to change the channel state <i>(optional)</i></li>
-	 *         </ul>
+	 * @param channelIds An array of IDs of channels for which the state should be set
+	 * @param state One of the following states:
+	 * <ul>
+	 * <li>DEPLOY</li>
+	 * <li>START</li>
+	 * <li>PAUSE</li>
+	 * <li>STOP</li>
+	 * <li>HALT</li>
+	 * <li>UNDEPLOY</li>
+	 * <li>DISABLE</li>
+	 * </ul>
+	 * @return the target state
+	 * @throws ServiceUnavailableException 
+	 * @throws ConfigurationException 
+	 * @throws ParseException 
 	 */
-	public NativeObject setChannelState(NativeArray channelId) {
+	public NativeObject setChannelState(Object channelIds, String state) throws ConfigurationException, ServiceUnavailableException, ParseException {
 
-		return null;
+		if((state == null) || state.isEmpty()) {
+			return createReturnValue(500, "No channel state to be set has been provided!");
+		}
+		
+		switch (state.toUpperCase()) {
+		case "DEPLOY":
+			deployChannel(channelIds, state);  // done but untested
+			break;
+		case "UNDEPLOY":
+			undeployChannel(channelIds);
+			break;
+		case "ENABLE":
+			enableChannel(channelIds);
+			break;
+		case "DISABLE":
+			disableChannel(channelIds);
+			break;
+		case "START":
+			startChannel(channelIds);
+			break;
+		case "PAUSE":
+			pauseChannel(channelIds);
+			break;
+		case "STOP":
+			stopChannel(channelIds);
+			break;
+//		case "HALT":
+//			haltChannel(channelIds);
+//			break;
+		default:
+			return createReturnValue(500, "The requested channel state \""+state+"\" is unknown!");
+		}
+		String extension = (state.charAt(state.length() - 1) == 'E') ? "D" : "ED";
+		
+		return createReturnValue(200, state.equalsIgnoreCase("STOP") ? "STOPPED" : state + extension);
+	}
+	
+	/**
+	 * Deploys a channel to its initial state that has been configured within the channel
+	 * @param channelIds A list of channel IDs
+	 * @throws ServiceUnavailableException 
+	 * @throws ConfigurationException 
+	 */
+	private void deployChannel(NativeArray channelIds) throws ConfigurationException, ServiceUnavailableException {
+		deployChannel(channelIds, null);
+	}
+
+	/**
+	 * Deploys a channel to an arbitrary state
+	 * @param channels A list of channel IDs or the id of a single channel
+	 * @param requiredState The state to which the channel should be deployed. <br>supported are:
+	 * <ul>
+	 * <li><b>STARTED</b></li>
+	 * <li><b>PAUSED</b></li>
+	 * <li><b>STOPPED</b></li>
+	 * </ul>
+	 * @throws ServiceUnavailableException 
+	 * @throws ConfigurationException 
+	 */
+	private void deployChannel(Object channels, String requiredState) throws ConfigurationException, ServiceUnavailableException {
+	
+		NativeArray channelIds = null;
+		
+		// check if a valid custom state was provided (custom state might be another initial state than the one configured in the channel)
+		boolean isStateProvided = (requiredState != null) && !requiredState.isEmpty() && channelDeployState.contains(requiredState.toUpperCase());
+
+		// check if the channels parameter is valid (means either a NativeArray or a String)
+		if((channels == null) || !((channels instanceof String) || (channels instanceof NativeArray))) {
+			logger.error("The provided channels-parameter was invalid (" + channels.getClass().getName() + ")");
+			return;
+		}
+
+		// if only a single channel ID was provided
+		if (channels instanceof String) {
+			// place it in a native array
+			channelIds = new NativeArray(0);
+			// a little more complicated as it would have to be...
+			channelIds.put(0, channelIds, (String) channels);
+		} else {
+			// there is already a native array if multiple channels were provided
+			channelIds = (NativeArray) channels;
+		}
+ 		
+		for (int index = 0; index < channelIds.getLength(); index++) {
+			// get the next channel ID
+			String channelId = (String) channelIds.get(index, null);
+			String initialChannelState = null;
+			
+			// also obtain the channel information as the configured deploy state is needed
+			JSONObject channel = getChannelInfoById(channelId);
+			if(channel == null) {
+				logger.error("Channel with ID \""+channelId+"\" does not exist!");
+				continue;
+			}
+
+			// enable it if it is disabled
+			getResponseAsXml(connectToRestService("/api/channels/" + channelId + "/enabled/true"), "dummyToForcePOSTRequest");
+	
+			// if a specific channel state for channel deployment was provided
+			if(isStateProvided) {
+				
+				// get the configured state of the channel
+				initialChannelState = channel.getString("Initial state");
+				
+				// if the desired state is the same as the configured state
+				if(initialChannelState.compareToIgnoreCase(requiredState) == 0) {
+					// no state change is needed
+					initialChannelState =  null;
+				}
+				
+				// if there is an initial state that differs from the required state
+				if(initialChannelState != null) {
+					// temporarily change the initial state
+					String status = getResponseAsXml(connectToRestService("/api/channels/" + channelId + "/initialState/" + requiredState.toUpperCase()), "dummyToForcePOSTRequest");	
+				}
+				
+			}
+			
+			// deploy the channel
+			String status = getResponseAsXml(connectToRestService("/api/channels/" + channelId + "/_deploy?returnErrors=true"), "dummyToForcePOSTRequest");
+
+			// if there is an initial state that differs from the required state
+			if(initialChannelState != null) {
+				// change the initial state back to the one that was originally configured
+				status = getResponseAsXml(connectToRestService("/api/channels/" + channelId + "/initialState/" + initialChannelState), "dummyToForcePOSTRequest");
+			}
+		}
+	}
+	
+	/**
+	 * Undeploys channels
+	 * @param channels A list of channel IDs or a single channel ID
+	 * @throws ServiceUnavailableException 
+	 * @throws ParseException 
+	 */
+	private void undeployChannel(Object channels) throws ServiceUnavailableException, ParseException {
+		undeployChannel(channels, null);
+	}
+
+	/**
+	 * Undeploys channels
+	 * @param channels A list of channel IDs or a single channel ID
+	 * @param requiredState The state to which the channel should be undeployed. <br>supported are:
+	 * <ul>
+	 * <li><b>ENABLED</b></li>
+	 * <li><b>DISABLED</b></li>
+	 * </ul>
+	 * @throws ServiceUnavailableException 
+	 * @throws ParseException 
+	 */
+	private void undeployChannel(Object channels, String requiredState) throws ServiceUnavailableException, ParseException {
+		NativeArray channelIds = null;
+		
+		// check if a valid custom state was provided (custom state might be another initial state than the one configured in the channel)
+		boolean disableChannel = (requiredState != null) && !requiredState.isEmpty() && (requiredState.compareToIgnoreCase("DISABLED") == 0);
+		
+		// check if the channels parameter is valid (means either a NativeArray or a String)
+		if((channels == null) || !((channels instanceof String) || (channels instanceof NativeArray))) {
+			logger.error("The provided channels-parameter was invalid (" + channels.getClass().getName() + ")");
+			return;
+		}
+		
+		// if only a single channel ID was provided
+		if (channels instanceof String) {
+			// place it in a native array
+			channelIds = new NativeArray(0);
+			// a little more complicated as it would have to be...
+			channelIds.put(0, channelIds, (String) channels);
+		} else {
+			// there is already a native array if multiple channels were provided
+			channelIds = (NativeArray) channels;
+		}				
+
+		for (int index = 0; index < channelIds.getLength(); index++) {
+			// get the next channel ID
+			String channelId = (String) channelIds.get(index, null);
+			// get the channel state
+			NativeObject channelState = getChannelState(channelId);
+			
+			// if the channel is undeployed or stopped, some extra love is needed
+			if(channelState != null) {
+				// undeploy the channel
+				String status = getResponseAsXml(connectToRestService("/api/channels/" + channelId + "/_undeploy?returnErrors=true"), "dummyToForcePOSTRequest");				
+			}
+
+			// if channel should also be disabled
+			if (disableChannel) {
+				// do so
+				String status = getResponseAsXml(connectToRestService("/api/channels/" + channelId + "/enabled/false"), "dummyToForcePOSTRequest");
+			}
+		}
+	}
+
+	/**
+	 * Sets channels to stopped state, independent of their current state
+	 * @param channels A list of channel IDs or a single channel ID
+	 * @throws ServiceUnavailableException 
+	 * @throws ParseException 
+	 * @throws ConfigurationException 
+	 */
+	private void stopChannel(Object channels) throws ServiceUnavailableException, ParseException, ConfigurationException {
+		NativeArray channelIds = null;
+		
+		// check if the channels parameter is valid (means either a NativeArray or a String)
+		if((channels == null) || !((channels instanceof String) || (channels instanceof NativeArray))) {
+			logger.error("The provided channels-parameter was invalid (" + channels.getClass().getName() + ")");
+			return;
+		}
+		
+		// if only a single channel ID was provided
+		if (channels instanceof String) {
+			// place it in a native array
+			try {
+				channelIds = (NativeArray) jsonParser.parseValue("[\"" + channels + "\"]");
+			} catch (ParseException e) {// won't happen
+			}
+		} else {
+			// there is already a native array if multiple channels were provided
+			channelIds = (NativeArray) channels;
+		}	
+		
+		// get all channel states
+		NativeObject channelStates = (NativeObject) getChannelState(channelIds).get("payload");
+		
+		for (int index = 0; index < channelIds.size(); index++) {
+			// get the next channel ID
+			String channelId = (String) channelIds.get(index, null);
+			// and the current state of the channel
+			String channelState = (String) channelStates.get(channelId);
+			// if the channel is undeployed some extra love is needed
+			if(channelState == null) {
+				// use the hack to deploy the channel in the paused state (if necessary)
+				deployChannel(channelId, "STOPPED");
+			} else if(("STARTED".equals(channelState)) || ("PAUSED".equals(channelState))) {
+				// if the channel is already running or paused set it to stopped
+				String status = getResponseAsXml(connectToRestService("/api/channels/" + channelId + "/_stop?returnErrors=true"), "dummyToForcePOSTRequest");
+			} else if("STOPPING".equals(channelState)) {
+				// if the channel is already running or paused set it to stopped
+				String status = getResponseAsXml(connectToRestService("/api/channels/" + channelId + "/_halt?returnErrors=true"), "dummyToForcePOSTRequest");
+			}
+		}
+	}
+	
+	/**
+	 * Pauses channels
+	 * @param channels A list of channel IDs or a single channel ID
+	 * @throws ServiceUnavailableException 
+	 * @throws ConfigurationException 
+	 * @throws ParseException 
+	 */
+	private void pauseChannel(Object channels) throws ServiceUnavailableException, ConfigurationException, ParseException {
+		NativeArray channelIds = null;
+		
+		// check if the channels parameter is valid (means either a NativeArray or a String)
+		if((channels == null) || !((channels instanceof String) || (channels instanceof NativeArray))) {
+			logger.error("The provided channels-parameter was invalid (" + channels.getClass().getName() + ")");
+			return;
+		}
+		
+		// if only a single channel ID was provided
+		if (channels instanceof String) {
+			// place it in a native array
+			try {
+				channelIds = (NativeArray) jsonParser.parseValue("[\"" + channels + "\"]");
+			} catch (ParseException e) {// won't happen
+			}
+		} else {
+			// there is already a native array if multiple channels were provided
+			channelIds = (NativeArray) channels;
+		}
+		
+		// get all channel states
+		NativeObject channelStates = (NativeObject) getChannelState(channelIds).get("payload");
+
+		// treat all provided channels
+		for (int index = 0; index < channelIds.getLength(); index++) {
+			// get the next channel ID
+			String channelId = (String) channelIds.get(index, null);
+			// and the current state of the channel
+			String channelState = (String) channelStates.get(channelId);
+			
+			// if the channel is undeployed or stopped, some extra love is needed
+			if((channelState == null) || "STOPPED".equals(channelState)) {
+				// use the hack to deploy the channel in the paused state (if necessary)
+				deployChannel(channelId, "PAUSED");
+				
+			} else if("STARTED".equals(channelState)) {
+				// if the channel is already running set it to pause
+				String status = getResponseAsXml(connectToRestService("/api/channels/" + channelId + "/_pause?returnErrors=true"), "dummyToForcePOSTRequest");
+			}
+		}
+	}
+	
+	/**
+	 * Sets channels to started state, independent of their current state
+	 * @param channels A list of channel IDs or a single channel ID
+	 * @throws ParseException 
+	 * @throws ServiceUnavailableException 
+	 * @throws ConfigurationException 
+	 */
+	private void startChannel(Object channels) throws ServiceUnavailableException, ParseException, ConfigurationException {
+		NativeArray channelIds = null;
+		
+		// check if the channels parameter is valid (means either a NativeArray or a String)
+		if((channels == null) || !((channels instanceof String) || (channels instanceof NativeArray))) {
+			logger.error("The provided channels-parameter was invalid (" + channels.getClass().getName() + ")");
+			return;
+		}
+		
+		// if only a single channel ID was provided
+		if (channels instanceof String) {
+			// place it in a native array
+			try {
+				channelIds = (NativeArray) jsonParser.parseValue("[\"" + channels + "\"]");
+			} catch (ParseException e) {// won't happen
+			}
+		} else {
+			// there is already a native array if multiple channels were provided
+			channelIds = (NativeArray) channels;
+		}
+		
+		// get all channel states
+		NativeObject channelStates = (NativeObject) getChannelState(channelIds).get("payload");
+	
+		// treat all provided channels
+		for (int index = 0; index < channelIds.getLength(); index++) {
+			// get the next channel ID
+			String channelId = (String) channelIds.get(index, null);
+			// and the current state of the channel
+			String channelState = (String) channelStates.get(channelId);
+			
+			// if the channel is undeployed or stopped, some extra love is needed
+			if(channelState == null) {
+				// use the hack to deploy the channel in the paused state (if necessary)
+				deployChannel(channelId, "STARTED");
+				
+			} else if("PAUSED".equals(channelState)) {
+				// if the channel is already running set it to pause
+				String status = getResponseAsXml(connectToRestService("/api/channels/" + channelId + "/_resume?returnErrors=true"), "dummyToForcePOSTRequest");
+			}else if("STOPPED".equals(channelState)) {
+				// if the channel is already running set it to pause
+				String status = getResponseAsXml(connectToRestService("/api/channels/" + channelId + "/_start?returnErrors=true"), "dummyToForcePOSTRequest");
+			}
+		}
+	}
+	
+	/**
+	 * halts channels
+	 * @param channelId A list of channel IDs
+	 * @return
+	 */
+//	private NativeObject haltChannel(Object channels) {
+//		return null;
+//	}
+
+	/**
+	 * disables channels
+	 * @param channelId A list of channel IDs
+	 * @throws ParseException 
+	 * @throws ServiceUnavailableException 
+	 */
+	private void disableChannel(Object channels) throws ServiceUnavailableException, ParseException {
+		NativeArray channelIds = null;
+		
+		// check if the channels parameter is valid (means either a NativeArray or a String)
+		if((channels == null) || !((channels instanceof String) || (channels instanceof NativeArray))) {
+			logger.warn("The provided channels-parameter was invalid (" + channels.getClass().getName() + ")");
+			return;
+		}
+		
+		// if only a single channel ID was provided
+		if (channels instanceof String) {
+			// place it in a native array
+			channelIds = new NativeArray(0);
+			// a little more complicated as it would have to be...
+			channelIds.put(0, channelIds, (String) channels);
+
+		} else {
+			// there is already a native array if multiple channels were provided
+			channelIds = (NativeArray) channels;
+		}
+		
+		// treat all provided channels
+		for (int index = 0; index < channelIds.getLength(); index++) {
+			// get the next channel ID
+			String channelId = (String) channelIds.get(index, null);
+			
+			undeployChannel(channelId, "DISABLED");
+		}
+	}
+
+	/**
+	 * enables channels
+	 * @param channelId A list of channel IDs
+	 * @throws ParseException 
+	 * @throws ServiceUnavailableException 
+	 */
+	private void enableChannel(Object channels) throws ServiceUnavailableException, ParseException {
+		NativeArray channelIds = null;
+		
+		// check if the channels parameter is valid (means either a NativeArray or a String)
+		if((channels == null) || !((channels instanceof String) || (channels instanceof NativeArray))) {
+			logger.warn("The provided channels-parameter was invalid (" + channels.getClass().getName() + ")");
+			return;
+		}
+		
+		// if only a single channel ID was provided
+		if (channels instanceof String) {
+			// place it in a native array
+			channelIds = new NativeArray(0);
+			// a little more complicated as it would have to be...
+			channelIds.put(0, channelIds, (String) channels);
+
+		} else {
+			// there is already a native array if multiple channels were provided
+			channelIds = (NativeArray) channels;
+		}
+		
+		// treat all provided channels
+		for (int index = 0; index < channelIds.getLength(); index++) {
+			// get the next channel ID
+			String channelId = (String) channelIds.get(index, null);
+
+			// set the channel to enabled (just applying it to every concerned channel is cheaper than testing channel state first)
+			String status = getResponseAsXml(connectToRestService("/api/channels/" + channelId + "/enabled/true"), "dummyToForcePOSTRequest");
+		}
 	}
 
 	/**
@@ -6085,35 +6518,46 @@ public class MirthMigrator {
 					String.format("Service at %s:%d is currently not available", connection.getURL().getHost(), connection.getURL().getPort()));
 		}
 
-		// read everything in
-		BufferedReader reader;
-		reader = new BufferedReader(new InputStreamReader(response, StandardCharsets.UTF_8));
+		BufferedReader reader = null;
+		StringBuilder sb = null;
+		String line = null;
 
-		StringBuilder sb = new StringBuilder();
-		String line;
 		try {
-			while ((line = reader.readLine()) != null) {
-				sb.append(line).append('\n');
+			// if there is any response from the server
+			if (response != null) {
+				// read everything in
+				reader = new BufferedReader(new InputStreamReader(response, StandardCharsets.UTF_8));
+				
+				sb = new StringBuilder();
+				
+				try {
+					while ((line = reader.readLine()) != null) {
+						sb.append(line).append('\n');
+					}
+					reader.close();
+				} finally {
+					try {
+						reader.close();
+					} catch (Exception ex) {
+						logger.error("readResponse() failure: " + ex.getMessage());
+					}
+				}
 			}
-			reader.close();
 
 			// assemble the response and return it
+			// the response code
 			result.put("responseCode", connection.getResponseCode());
+			// general success indicator
 			result.put("successful", true);
-			// result.put("responseMessage", sb.toString().replaceAll("(encoding=\"base64\">)[^<]+", "$1REMOVED"));
-			result.put("responseMessage", sb.toString());
+			// the response message
+			result.put("responseMessage", (sb != null) ? sb.toString() : "");
 
 			return result;
 		} catch (IOException e) {
 			logger.error("readResponse() IOException: " + e.getMessage());
 			return null;
-		} finally {
-			try {
-				reader.close();
-			} catch (Exception ex) {
-				logger.error("readResponse() failure: " + ex.getMessage());
-			}
 		}
+
 	}
 
 	/**
