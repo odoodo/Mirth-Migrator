@@ -84,6 +84,7 @@
 	],
 	"miscellaneous": {
 		"sessionLifeSpanInMinutes": 20,
-		"channelStatusUpdateIntervalInSeconds": 5
+		"channelStatusUpdateIntervalInSeconds": 5,
+		"useExtendedChannelStateControlScheme": true
 	}
 }
