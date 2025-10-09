@@ -85,7 +85,7 @@ function saveSettings(){
 	
 	// read the configuration from the settings tabs
 	var configuration = generateConfiguration();
-	
+//	console.log('INBOUND:  ' + loadedConfigChecksum + ' \nOUTBOUND: '+configuration.checksum+' \nSAME: '+ (loadedConfigChecksum == configuration.checksum)+' \n\nCONFIG:\n'+JSON.stringify(configuration));
 	// check if the configuration has changed
 	var configurationHasChanged = (loadedConfigChecksum != configuration.checksum);
 	// reset the marker
@@ -256,8 +256,16 @@ function getMiscConfiguration(){
 	refreshIntervalInSeconds = $('#channelStatusUpdateInterval').val().trim();
 	activateChannelStatusUpdates();
 	
-	// just read the only parameter for the time being
-	return {"sessionLifeSpanInMinutes": ($('#sessionLifespann').val().trim() != 'deactivated') ? $('#sessionLifespann').val().trim() : 0, "channelStatusUpdateIntervalInSeconds": refreshIntervalInSeconds};
+	// set the channel state control scheme that should be used
+	useExtendedChannelStateControlScheme = $('#useExtendedChannelStateControlScheme').is(":checked");
+	
+	// Read in the misc parameters. The order is of importance as the Java side stores the config in exaclty this order (no clue why). 
+	// If the order is changed the checksums do not correspond anymore and the config will be detected as changed everytime the section is closed
+	return  {
+				"sessionLifeSpanInMinutes": ($('#sessionLifespann').val().trim() != 'deactivated') ? $('#sessionLifespann').val().trim() : 0,
+				"useExtendedChannelStateControlScheme": useExtendedChannelStateControlScheme,
+				"channelStatusUpdateIntervalInSeconds": refreshIntervalInSeconds
+			}
 }
 
 /**
@@ -378,8 +386,9 @@ function setMiscConfiguration(miscellaneous){
 	// create the section content
 	var miscConfiguration = '<h2><i><u>Misc Configuration Parameters</u></i></h2>' + 
 							'<table id="miscParameters">' + 
-							'<tr><td>Maximum inactivity period:</td><td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><input type="number" id="sessionLifespann" min="0" value="' + (miscellaneous.sessionLifeSpanInMinutes || 0) + '" style="width: 40px" title="The number of minutes of inactivity after which a user session will expire and the user needs to reauthenticate to go on.\nThe session will never expire if this value is set to 0."> minutes&nbsp;<span id="unlimitedLifespan" style="color: red" title="The session inactivity timeout is currently deactivated.\nIncrease the value for reactivating it."><b><i>(deactivated)</i></b></span></td></tr>' + 
-							'<tr><td>Channel status refresh frequency:</td><td><input type="number" id="channelStatusUpdateInterval" min="1" value="' + (miscellaneous.channelStatusUpdateIntervalInSeconds || 5) + '" style="width: 40px" title="The number of seconds after which the state of channels will be refreshed"> seconds</td></tr>' + 
+							'<tr><td>Maximum inactivity period:</td><td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><input type="number" id="sessionLifespann" min="0" value="' + (miscellaneous.sessionLifeSpanInMinutes || 0) + '" style="width: 40px" title="The number of minutes of inactivity after which a user session will expire and the user needs to reauthenticate to go on.\nThe session will never expire if this value is set to 0."> minutes&nbsp;<span id="unlimitedLifespan" style="color: red" title="The session inactivity timeout is currently deactivated.\nIncrease the value for reactivating it."/><b><i>(deactivated)</i></b></span></td></tr>' + 
+							'<tr><td>Channel status refresh frequency:</td><td><input type="number" id="channelStatusUpdateInterval" min="1" value="' + (miscellaneous.channelStatusUpdateIntervalInSeconds || 5) + '" style="width: 40px" title="The number of seconds after which the state of channels will be refreshed"/> seconds</td></tr>' + 
+							'<tr><td>Use extended channel state control:</td><td><input type="checkbox" id="useExtendedChannelStateControlScheme"' + (miscellaneous.useExtendedChannelStateControlScheme ? ' checked="checked"' : '') + '" title="Determines if the extended channel state control scheme or the classic one like in Mirth Administrator will be used.\n\nThe extended channel state control scheme allows the direct change between arbitrary states (e.g. from stopped to paused).\n\nThis however comes at a price:\nIf a channel should be set from STOPPED to PAUSED or should be deployed to an arbitrary state that is not configured as the initial state of the channel, the Mirth Administrator will indicate a revision change.\n\nThis is due to the way the limitations are circumvented:\n 1. initial state is changed to the desired state\n 2. channel is deployed\n 3. initial state is changed back to the original state, which causes the revision change"/></td></tr>' + 
 							'</table>';
 	// and display it
 	$("#miscConfiguration").html(miscConfiguration);
@@ -493,9 +502,10 @@ function openSettings(requestStatus, configuration, parameters){
 	
 	// indicate that the config section is currently active
 	configSectionActive = true;
-	
+	console.log('INBOUND: \n'+JSON.stringify(configuration));
 	// create a checksum from the loaded settings for detecting later on if configuration has changed
 	loadedConfigChecksum = calculateChecksum(configuration);
+	console.log('INBOUND CHECKSUM: \n'+loadedConfigChecksum);
 	
 	$("#configurationSection").css('display','block');
 	$("#environmentConfiguration").css('display','block');
