@@ -85,7 +85,6 @@ function saveSettings(){
 	
 	// read the configuration from the settings tabs
 	var configuration = generateConfiguration();
-//	console.log('INBOUND:  ' + loadedConfigChecksum + ' \nOUTBOUND: '+configuration.checksum+' \nSAME: '+ (loadedConfigChecksum == configuration.checksum)+' \n\nCONFIG:\n'+JSON.stringify(configuration));
 	// check if the configuration has changed
 	var configurationHasChanged = (loadedConfigChecksum != configuration.checksum);
 	// reset the marker
@@ -502,10 +501,8 @@ function openSettings(requestStatus, configuration, parameters){
 	
 	// indicate that the config section is currently active
 	configSectionActive = true;
-	console.log('INBOUND: \n'+JSON.stringify(configuration));
 	// create a checksum from the loaded settings for detecting later on if configuration has changed
 	loadedConfigChecksum = calculateChecksum(configuration);
-	console.log('INBOUND CHECKSUM: \n'+loadedConfigChecksum);
 	
 	$("#configurationSection").css('display','block');
 	$("#environmentConfiguration").css('display','block');

@@ -66,6 +66,19 @@ var activityCounter = 0;
 var pendingRequests = [];
 
 /**
+* Handles the refresh rate of the channel states
+*/
+// stores the reference to the refresh interval
+var INTERVAL_ID;
+// The frequency in seconds that is used for updating the channel state
+var refreshIntervalInSeconds = 5;
+
+/**
+* Determines if only classic channel state control scheme will be used (like in Mirth administrator) or the extended scheme (see configuration section for more details)
+*/
+var useExtendedChannelStateControlScheme = true;
+
+/**
  * Starts an activity and replaces the normal mouse cursor by the busy mouse cursor
  */
 function indicateActivityStart(){
@@ -288,7 +301,7 @@ function accessResource(command, payload, action, parameters, refreshCache, sile
 				// get the status code
 				statusCode = xhr.status;
 				// deactivate automatic channel status update
-				deactivateChannelStatusUpdates()	
+				deactivateChannelStatusUpdates();	
 				// if the error dialog is currently still active
 				if($("#errorPopup").css('display') == 'flex'){
 					// do not overwrite it
@@ -454,6 +467,8 @@ function setGlobalParameters(statusCode, response) {
 	$("#versionNumber").html('v' + response.version);
 	// set the channel state refresh rate
 	refreshIntervalInSeconds = response.channelStateRefreshRate || refreshIntervalInSeconds;
+	// determine which channel state control scheme should be used
+	useExtendedChannelStateControlScheme = response.useExtendedChannelStateControlScheme || useExtendedChannelStateControlScheme;
 }
 
 /**
@@ -1458,7 +1473,6 @@ function highlight(row, systemType, multiSelectKeysPressed) {
 		}
         selectedId = "#" + row.attr('id');
 		row.focus({preventScroll: true});
-		// console.log('Active: '+$(document.activeElement).attr('name'));
     }
 }
 
@@ -1581,8 +1595,8 @@ function createMetaDataTable(component, componentType) {
 	content.push('<tr><th>Attribute</th><th>Value</th></tr>');
 	var key;
 	var value = '';
-	// the fields and there order as they should be shown
-	var keyList = ['Function Name', 'Name', 'Type', 'Description', 'Outbound Interfaces', 'Inbound Interfaces', 'Changes', 'Parameters', 'Return value', 'Version', 
+	// the fields and their order as they should be shown
+	var keyList = ['Function Name', 'Name', 'Type', 'Description', 'Initial state', 'Outbound Interfaces', 'Inbound Interfaces', 'Changes', 'Parameters', 'Return value', 'Version', 
 	'Display date', 'Id', 'Number of channels', 'Number of invalid references', 'Number of references', 'Referenced by channels', 'Channel status', 
 	'Referenced Libraries', 'Referenced by functions', 'Uses functions'];
 	// now add a line for each meta data
@@ -2625,9 +2639,6 @@ function encrypt(text) {
     return encrypted;
 }
 
-var INTERVAL_ID;
-// The frequency in seconds that is used for updating the channel state
-var refreshIntervalInSeconds = 5;
 
 /**
 	If channels are displayed and the automatic channel status update is not active, it will be activated
