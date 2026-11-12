@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -4860,6 +4861,12 @@ public class MirthMigrator {
 				// now try to obtain the component ID from the target Mirth instance
 				targetComponentId = componentType.equals(CODE_TEMPLATE) ? targetSystem.getCodeTemplateIdByName(componentName)
 						: targetSystem.getChannelIdByName(componentName);
+				// All functions of a code template share its name, so the name only finds the code template. Compare the function with
+				// the same function name in it, not whichever function the name happens to map to (issue #17).
+				if (componentType.equals(CODE_TEMPLATE) && (targetComponentId != null)) {
+					targetComponentId = targetSystem.getFunctionId(toServerCodeTemplateId(targetComponentId),
+							getCodeTemplateMetaDataById(componentId).optString("Function name", null));
+				}
 			}
 
 			// get hold of the component at the source system
@@ -7131,6 +7138,58 @@ public class MirthMigrator {
 	}
 
 	/**
+	 * Converts the id Mirth Migrator uses for a function back to the id of its code template. If a code template contains more than one
+	 * function, the second and later functions get an artificial id "&lt;code template id&gt;_&lt;n&gt;" (see generateCodeTemplateMetaData),
+	 * which the server does not know.
+	 * 
+	 * @param codeTemplateId
+	 *            The id of a code template or of one of its functions
+	 * @return The id of the code template
+	 */
+	static String toServerCodeTemplateId(String codeTemplateId) {
+		return (codeTemplateId == null) ? null : codeTemplateId.replaceFirst("_\\d+$", "");
+	}
+
+	/**
+	 * Finds the id Mirth Migrator uses for a function of a code template.
+	 * 
+	 * @param codeTemplateId
+	 *            The id of the code template
+	 * @param functionName
+	 *            The name of the function, as in the "Function name" meta data
+	 * @return The id of that function ("&lt;code template id&gt;" or "&lt;code template id&gt;_&lt;n&gt;"), or the code template id if the
+	 *         code template has no function of that name
+	 * @throws ServiceUnavailableException
+	 */
+	private String getFunctionId(String codeTemplateId, String functionName) throws ServiceUnavailableException {
+		if (functionName != null) {
+			for (Map.Entry<String, JSONObject> entry : getCodeTemplateInfo().entrySet()) {
+				if (codeTemplateId.equals(toServerCodeTemplateId(entry.getKey()))
+						&& functionName.equals(entry.getValue().optString("Function name", null))) {
+					return entry.getKey();
+				}
+			}
+		}
+		return codeTemplateId;
+	}
+
+	/**
+	 * Converts function ids to code template ids (see {@link #toServerCodeTemplateId(String)}) and removes duplicates, so a code template is
+	 * migrated once even if several of its functions were selected. The order is kept.
+	 * 
+	 * @param codeTemplateIds
+	 *            Ids of code templates or of their functions
+	 * @return The distinct code template ids
+	 */
+	static String[] toServerCodeTemplateIds(String[] codeTemplateIds) {
+		LinkedHashSet<String> serverIds = new LinkedHashSet<String>();
+		for (String codeTemplateId : codeTemplateIds) {
+			serverIds.add(toServerCodeTemplateId(codeTemplateId));
+		}
+		return serverIds.toArray(new String[0]);
+	}
+
+	/**
 	 * Provides channel configuration from the server
 	 * 
 	 * @param channelId
@@ -7465,6 +7524,10 @@ public class MirthMigrator {
 		overallResult = new JSONObject();
 		JSONArray success = new JSONArray();
 		JSONArray failure = new JSONArray();
+
+		// Functions picked from the second function of a code template onwards carry an artificial id
+		// ("<id>_2", ...). Migrate the code template behind them, once, under its real id (issue #17).
+		codeTemplateIds = toServerCodeTemplateIds(codeTemplateIds);
 
 		/** Check for all code templates if an id replacement is needed */
 		for (int index = 0; index < codeTemplateIds.length; index++) {
