@@ -4861,6 +4861,12 @@ public class MirthMigrator {
 				// now try to obtain the component ID from the target Mirth instance
 				targetComponentId = componentType.equals(CODE_TEMPLATE) ? targetSystem.getCodeTemplateIdByName(componentName)
 						: targetSystem.getChannelIdByName(componentName);
+				// All functions of a code template share its name, so the name only finds the code template. Compare the function with
+				// the same function name in it, not whichever function the name happens to map to (issue #17).
+				if (componentType.equals(CODE_TEMPLATE) && (targetComponentId != null)) {
+					targetComponentId = targetSystem.getFunctionId(toServerCodeTemplateId(targetComponentId),
+							getCodeTemplateMetaDataById(componentId).optString("Function name", null));
+				}
 			}
 
 			// get hold of the component at the source system
@@ -7142,6 +7148,29 @@ public class MirthMigrator {
 	 */
 	static String toServerCodeTemplateId(String codeTemplateId) {
 		return (codeTemplateId == null) ? null : codeTemplateId.replaceFirst("_\\d+$", "");
+	}
+
+	/**
+	 * Finds the id Mirth Migrator uses for a function of a code template.
+	 * 
+	 * @param codeTemplateId
+	 *            The id of the code template
+	 * @param functionName
+	 *            The name of the function, as in the "Function name" meta data
+	 * @return The id of that function ("&lt;code template id&gt;" or "&lt;code template id&gt;_&lt;n&gt;"), or the code template id if the
+	 *         code template has no function of that name
+	 * @throws ServiceUnavailableException
+	 */
+	private String getFunctionId(String codeTemplateId, String functionName) throws ServiceUnavailableException {
+		if (functionName != null) {
+			for (Map.Entry<String, JSONObject> entry : getCodeTemplateInfo().entrySet()) {
+				if (codeTemplateId.equals(toServerCodeTemplateId(entry.getKey()))
+						&& functionName.equals(entry.getValue().optString("Function name", null))) {
+					return entry.getKey();
+				}
+			}
+		}
+		return codeTemplateId;
 	}
 
 	/**
