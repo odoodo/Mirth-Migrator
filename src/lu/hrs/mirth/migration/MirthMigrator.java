@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -7131,6 +7132,35 @@ public class MirthMigrator {
 	}
 
 	/**
+	 * Converts the id Mirth Migrator uses for a function back to the id of its code template. If a code template contains more than one
+	 * function, the second and later functions get an artificial id "&lt;code template id&gt;_&lt;n&gt;" (see generateCodeTemplateMetaData),
+	 * which the server does not know.
+	 * 
+	 * @param codeTemplateId
+	 *            The id of a code template or of one of its functions
+	 * @return The id of the code template
+	 */
+	static String toServerCodeTemplateId(String codeTemplateId) {
+		return (codeTemplateId == null) ? null : codeTemplateId.replaceFirst("_\\d+$", "");
+	}
+
+	/**
+	 * Converts function ids to code template ids (see {@link #toServerCodeTemplateId(String)}) and removes duplicates, so a code template is
+	 * migrated once even if several of its functions were selected. The order is kept.
+	 * 
+	 * @param codeTemplateIds
+	 *            Ids of code templates or of their functions
+	 * @return The distinct code template ids
+	 */
+	static String[] toServerCodeTemplateIds(String[] codeTemplateIds) {
+		LinkedHashSet<String> serverIds = new LinkedHashSet<String>();
+		for (String codeTemplateId : codeTemplateIds) {
+			serverIds.add(toServerCodeTemplateId(codeTemplateId));
+		}
+		return serverIds.toArray(new String[0]);
+	}
+
+	/**
 	 * Provides channel configuration from the server
 	 * 
 	 * @param channelId
@@ -7465,6 +7495,10 @@ public class MirthMigrator {
 		overallResult = new JSONObject();
 		JSONArray success = new JSONArray();
 		JSONArray failure = new JSONArray();
+
+		// Functions picked from the second function of a code template onwards carry an artificial id
+		// ("<id>_2", ...). Migrate the code template behind them, once, under its real id (issue #17).
+		codeTemplateIds = toServerCodeTemplateIds(codeTemplateIds);
 
 		/** Check for all code templates if an id replacement is needed */
 		for (int index = 0; index < codeTemplateIds.length; index++) {
